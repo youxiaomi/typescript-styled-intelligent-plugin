@@ -1,0 +1,62 @@
+lockfileVersion: 5.4
+
+specifiers:
+  typescript: ^4.8.0
+  typescript-template-language-service-decorator: ^2.3.1
+  vscode-css-languageservice: ^6.1.1
+
+dependencies:
+  typescript: registry.npmmirror.com/typescript/4.8.4
+  typescript-template-language-service-decorator: registry.npmmirror.com/typescript-template-language-service-decorator/2.3.1
+  vscode-css-languageservice: registry.npmmirror.com/vscode-css-languageservice/6.1.1
+
+packages:
+
+  registry.npmmirror.com/typescript-template-language-service-decorator/2.3.1:
+    resolution: {integrity: sha512-+Q5+cvBtPO4VKNyyI6O+XnIne+/hq/WfNhBaF4hJP8nB8TbikTg+2h9uBMsqduwX1+kVfwG9SBSwMTtvi2Ep7w==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/typescript-template-language-service-decorator/-/typescript-template-language-service-decorator-2.3.1.tgz}
+    name: typescript-template-language-service-decorator
+    version: 2.3.1
+    dev: false
+
+  registry.npmmirror.com/typescript/4.8.4:
+    resolution: {integrity: sha512-QCh+85mCy+h0IGff8r5XWzOVSbBO+KfeYrMQh7NJ58QujwcE22u+NUSmUxqF+un70P9GXKxa2HCNiTTMJknyjQ==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/typescript/-/typescript-4.8.4.tgz}
+    name: typescript
+    version: 4.8.4
+    engines: {node: '>=4.2.0'}
+    hasBin: true
+    dev: false
+
+  registry.npmmirror.com/vscode-css-languageservice/6.1.1:
+    resolution: {integrity: sha512-7d2NCq2plT0njAKmGZ11uof95y2fwbgq8QuToE3kX9uYQfVmejHX2/lFGKbK5AV5+Ja0L80UZoU0QspwqMKMHA==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/vscode-css-languageservice/-/vscode-css-languageservice-6.1.1.tgz}
+    name: vscode-css-languageservice
+    version: 6.1.1
+    dependencies:
+      vscode-languageserver-textdocument: registry.npmmirror.com/vscode-languageserver-textdocument/1.0.7
+      vscode-languageserver-types: registry.npmmirror.com/vscode-languageserver-types/3.17.2
+      vscode-nls: registry.npmmirror.com/vscode-nls/5.2.0
+      vscode-uri: registry.npmmirror.com/vscode-uri/3.0.6
+    dev: false
+
+  registry.npmmirror.com/vscode-languageserver-textdocument/1.0.7:
+    resolution: {integrity: sha512-bFJH7UQxlXT8kKeyiyu41r22jCZXG8kuuVVA33OEJn1diWOZK5n8zBSPZFHVBOu8kXZ6h0LIRhf5UnCo61J4Hg==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/vscode-languageserver-textdocument/-/vscode-languageserver-textdocument-1.0.7.tgz}
+    name: vscode-languageserver-textdocument
+    version: 1.0.7
+    dev: false
+
+  registry.npmmirror.com/vscode-languageserver-types/3.17.2:
+    resolution: {integrity: sha512-zHhCWatviizPIq9B7Vh9uvrH6x3sK8itC84HkamnBWoDFJtzBf7SWlpLCZUit72b3os45h6RWQNC9xHRDF8dRA==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/vscode-languageserver-types/-/vscode-languageserver-types-3.17.2.tgz}
+    name: vscode-languageserver-types
+    version: 3.17.2
+    dev: false
+
+  registry.npmmirror.com/vscode-nls/5.2.0:
+    resolution: {integrity: sha512-RAaHx7B14ZU04EU31pT+rKz2/zSl7xMsfIZuo8pd+KZO6PXtQmpevpq3vxvWNcrGbdmhM/rr5Uw5Mz+NBfhVng==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/vscode-nls/-/vscode-nls-5.2.0.tgz}
+    name: vscode-nls
+    version: 5.2.0
+    dev: false
+
+  registry.npmmirror.com/vscode-uri/3.0.6:
+    resolution: {integrity: sha512-fmL7V1eiDBFRRnu+gfRWTzyPpNIHJTc4mWnFkwBUmO9U3KPgJAmTx7oxi2bl/Rh6HLdU7+4C9wlj0k2E4AdKFQ==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/vscode-uri/-/vscode-uri-3.0.6.tgz}
+    name: vscode-uri
+    version: 3.0.6
+    dev: false
