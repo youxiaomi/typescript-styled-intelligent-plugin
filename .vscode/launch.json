@@ -6,11 +6,25 @@
     "configurations": [
         {
             "type": "node",
-            "name": "debuger test",
+            "name": "debuger test react",
             "sourceMaps": true,
             "runtimeExecutable": "ts-node",
-            // "runtimeArgs": ["src/test/scss.test.ts"]
+            // "runtimeArgs": ["out/test/react.test.js"],
             "runtimeArgs": ["src/test/react.test.ts"],
+            "outFiles": [
+                "${workspaceFolder}/**/*.js",
+                "/Users/squid/study/TypeScript-main/built/local/**/*.js",
+                // "/Users/squid/study/TypeScript-main/lib/**/*.js"
+            ]
+        },
+        {
+            "type": "node",
+            "name": "debuger test scss",
+            "sourceMaps": true,
+            "runtimeExecutable": "node",
+            // "runtimeArgs": ["src/test/scss.test.ts"]
+            "runtimeArgs": ["out/test/scss.test.js"],
+            // "runtimeArgs": ["src/test/scss.test.ts"],
             "outFiles": [
                 "${workspaceFolder}/**/*.js",
                 "/Users/squid/study/TypeScript-main/built/local/**/*.js",
