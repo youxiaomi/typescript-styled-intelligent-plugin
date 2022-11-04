@@ -38,10 +38,14 @@ const testText5 = `
 `
 const testText = `
   .shop,.shop .shop2{
+    color:red;
     .name .name2{
       .member{
         
       }
+    }
+    .name1{
+
     }
   }
 `
@@ -52,6 +56,7 @@ const testText9 = `
   }
 `
 const testText3 = `
+  color:red;
   .shop .name{
     .name2{
       .member{
@@ -60,7 +65,7 @@ const testText3 = `
     }
   }
   .user {
-    
+
   }
 
 `

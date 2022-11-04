@@ -14,6 +14,118 @@ export const getScssStyleSheet = (scssText:string) =>{
 }
 
 
+class NodeSelectorGenerator{
+  currentSimpleSelectorIndex = -1
+  selector:Node
+  declarationGenerators: NodeGenerator[]
+  parent:Node
+  declarations:Node[]
+  declartionsParent:Node
+  constructor(Selector:Node,declarations,selectorParent:Node,declartionsParent:Node){
+    this.selector = Selector
+    this.parent = selectorParent
+    this.declarations = declarations
+    this.declartionsParent = declartionsParent
+    this.declarationGenerators = declarations
+      .filter(declaration => declaration.type == NodeType.Ruleset)
+      .map(declaration=>{
+        return new NodeGenerator(declaration,declartionsParent)
+      })
+  }
+  private getNode = (simpleSelectorTarget:Node) =>{
+    let simpleSelectors = this.selector.getChildren()
+    if(this.currentSimpleSelectorIndex < simpleSelectors.length){
+      this.currentSimpleSelectorIndex++
+    }
+    let currentSimpleSelector = simpleSelectors[this.currentSimpleSelectorIndex];
+    if(currentSimpleSelector){
+      let targetText = currentSimpleSelector.getText()
+      let sourceText = simpleSelectorTarget.getText()
+      if (targetText == sourceText) {
+        return currentSimpleSelector
+      } else {
+        return this.getNode(simpleSelectorTarget)
+      }
+    }else{
+      if(this.declarationGenerators.length){
+        return this.declarationGenerators = this.declarationGenerators.filter(declaration=>{
+          return declaration.findNodes(simpleSelectorTarget)
+        })
+      }else{
+        return undefined
+      }
+      
+    }
+  }
+  findNodes =(simpleSelectorTarget:Node) =>{
+    return this.getNode(simpleSelectorTarget)
+  }
+  getCurrentNodes = ():Node| Node[]=>{
+    let simpleSelectors = this.selector.getChildren()
+    let currentSimpleSelector = simpleSelectors[this.currentSimpleSelectorIndex];
+    if(currentSimpleSelector){
+      return currentSimpleSelector
+    }else{
+      let nodes = this.declarationGenerators.map(gen => gen.getCurrentNodes())
+      let _nodes= flatten(nodes.filter(item => item))
+      return _nodes
+    }
+  }
+  clone = ()=>{
+    const cloneInstance = new NodeSelectorGenerator(this.selector,this.declarations,this.parent,this.declartionsParent)
+    cloneInstance.currentSimpleSelectorIndex = this.currentSimpleSelectorIndex
+    cloneInstance.declarationGenerators = this.declarationGenerators.map(gen => gen.clone())
+    return cloneInstance
+  }
+}
+class NodeGenerator{
+  currentRuleSet:Node
+  // currentSelectorIndex = 0
+  selectorGenerators:NodeSelectorGenerator[] = [];
+  parent?:Node
+  constructor(ruleSet:Node,parent?:Node){
+    this.parent = parent
+    this.currentRuleSet = ruleSet
+    let [nodeUndefined,nodeDeclarations] = this.currentRuleSet.getChildren();
+    let nodeSelectors = nodeUndefined.getChildren()
+    let declarations = nodeDeclarations.getChildren()
+    this.selectorGenerators = nodeSelectors.map(selecotr=>{
+      return new NodeSelectorGenerator(selecotr,declarations,nodeUndefined,ruleSet)
+    })
+  }
+  private getNode = (simpleSelectorSource:Node)=>{
+
+    console.log(this.currentRuleSet.getText(),'------target');
+    console.log(simpleSelectorSource.getText(),'-----simple');
+    return this.selectorGenerators = this.selectorGenerators.filter(gen=>{
+      return gen.findNodes(simpleSelectorSource)
+    })
+  }
+  findNodes =(simpleSelectorSource:Node) =>{
+    return this.getNode(simpleSelectorSource)
+  }
+  getCurrentNodes = ():Node[]=>{
+    let nodes = this.selectorGenerators.map(gen =>{
+      return gen.getCurrentNodes()
+    })
+    let _nodes:Node[] = []
+    let nodesFlatten =  flatten(nodes.filter(item => item))
+    nodesFlatten.forEach(node=>{
+      if(!_nodes.find(item => item == node)){
+        _nodes.push(node)
+      }
+    })
+    return _nodes
+  }
+  clone(){
+    const cloneInstance = new NodeGenerator(this.currentRuleSet,this.parent);
+    cloneInstance.selectorGenerators = this.selectorGenerators.map(gen=>{
+      return gen.clone()
+    })
+    return cloneInstance
+  }
+}
+
 class ScssService {
 
   getScssStyleSheet(scssText: string) {
@@ -22,24 +134,32 @@ class ScssService {
       languageId: 'scss',
       version: 1,
       getText: () => `:root{${scssText}}`,
+      // getText: () => `${scssText}`,
       positionAt: (offset: number) => {
         // const pos = context.toPosition(this.fromVirtualDocOffset(offset, context));
         // return this.toVirtualDocPosition(pos);
         // 会有偏移量
+        debugger
         return {
           line: 0,
           character: 0,
         }
       },
-      offsetAt: (p) => {
+      offsetAt: (position) => {
         // const offset = context.toOffset(this.fromVirtualDocPosition(p));
         // return this.toVirtualDocOffset(offset, context);
+        debugger
         return 0
       },
       lineCount: scssText.split(/\n/g).length + 1,
     }) as Node
+    let [ruleSet] = styleSheet.getChildren();
 
     return styleSheet
+  }
+  getRootRuleset = (styleSheet:Node) => {
+    let [ruleSet] = styleSheet.getChildren()
+    return ruleSet
   }
   findSelectorTree(rootNode:Node,pos:number){
     const interationNode = (_node:Node)=>{
@@ -53,126 +173,39 @@ class ScssService {
     }
     return interationNode(rootNode)
   }
-  findSelectorTreeBySelector(node:Node, selector:Node){
-    class NodeSelectorGenerator{
-      currentSimpleSelectorIndex = -1
-      selector:Node
-      declarationGenerators: NodeGenerator[]
-      parent:Node
-      constructor(Selector:Node,declarations,selectorParent:Node,declartionsParent:Node){
-        this.selector = Selector
-        this.parent = selectorParent
-        this.declarationGenerators = declarations
-          .filter(declaration => declaration.type == NodeType.Ruleset)
-          .map(declaration=>{
-            return new NodeGenerator(declaration,declartionsParent)
-          })
+  findSelectorTreeBySelector(targetStyleSheet:Node, sourceStyleSheet:Node){
+
+    let targetGenerator = new NodeGenerator(this.getRootRuleset(targetStyleSheet));
+    let sourceRuleSet = this.getRootRuleset(sourceStyleSheet);
+    const getNodes = (targetGenerator:NodeGenerator,sourceRuleSet:Node)=>{
+      let [ undefinedNode, declartionNode ]  = sourceRuleSet.getChildren()
+      let selectors = undefinedNode.getChildren()
+      let declarations = declartionNode.getChildren()
+      declarations = declarations.filter(declartion => declartion.type == NodeType.Ruleset)
+      const recursiveSelector = (targetGeneratorClone,selector:Node)=>{
+        let simpleSelectors = selector.getChildren();
+        return !simpleSelectors.find(simpleSelector => targetGeneratorClone.findNodes(simpleSelector).length == 0)
       }
-      private getNode = (simpleSelectorTarget:Node) =>{
-        let simpleSelectors = this.selector.getChildren()
-        if(this.currentSimpleSelectorIndex < simpleSelectors.length){
-          this.currentSimpleSelectorIndex++
+      let _selectors =  selectors.map(selector=>{
+        let targetGeneratorClone = targetGenerator.clone()
+        let hasSelector = recursiveSelector(targetGeneratorClone,selector);
+        if(!hasSelector){
+          return undefined
         }
-        let currentSimpleSelector = simpleSelectors[this.currentSimpleSelectorIndex];
-        if(currentSimpleSelector){
-          let targetText = currentSimpleSelector.getText()
-          let sourceText = simpleSelectorTarget.getText()
-          if (targetText == sourceText) {
-            return currentSimpleSelector
-          } else {
-            return this.getNode(simpleSelectorTarget)
-          }
+        if(declarations.length){
+          let result = declarations.map(ruleSet=>{
+            return getNodes(targetGeneratorClone.clone(),ruleSet)
+          }).filter(item => item)
+          return flatten(result)
         }else{
-          if(this.declarationGenerators.length){
-            return this.declarationGenerators = this.declarationGenerators.filter(declaration=>{
-              return declaration.findNodes(simpleSelectorTarget)
-            })
-          }else{
-            return undefined
-          }
-          
+          return targetGeneratorClone.getCurrentNodes()
         }
-      }
-      findNodes =(simpleSelectorTarget:Node) =>{
-        return this.getNode(simpleSelectorTarget)
-      }
-      getCurrentNodes = ():Node| Node[]=>{
-        let simpleSelectors = this.selector.getChildren()
-        let currentSimpleSelector = simpleSelectors[this.currentSimpleSelectorIndex];
-        if(currentSimpleSelector){
-          return currentSimpleSelector
-        }else{
-          let nodes = this.declarationGenerators.map(gen => gen.getCurrentNodes())
-          let _nodes= flatten(nodes.filter(item => item))
-          return _nodes
-        }
-      }
+      }).filter(item => item)
+      return flatten(_selectors)
     }
-    class NodeGenerator{
-      currentRuleSet:Node
-      // currentSelectorIndex = 0
-      selectorGenerators:NodeSelectorGenerator[] = [];
-      parent?:Node
-      constructor(ruleSet:Node,parent?:Node){
-        this.parent = parent
-        this.currentRuleSet = ruleSet
-        let [nodeUndefined,nodeDeclarations] = this.currentRuleSet.getChildren();
-        let nodeSelectors = nodeUndefined.getChildren()
-        let declarations = nodeDeclarations.getChildren()
-        this.selectorGenerators = nodeSelectors.map(selecotr=>{
-          return new NodeSelectorGenerator(selecotr,declarations,nodeUndefined,ruleSet)
-        })
-      }
-      private getNode = (simpleSelectorTarget:Node)=>{
-
-        console.log(this.currentRuleSet.getText(),'------target');
-        console.log(simpleSelectorTarget.getText(),'-----simple');
-        return this.selectorGenerators = this.selectorGenerators.filter(gen=>{
-          return gen.findNodes(simpleSelectorTarget)
-        })
-      }
-      findNodes =(simpleSelectorTarget:Node) =>{
-        
-        return this.getNode(simpleSelectorTarget)
-      }
-      getCurrentNodes = ():Node[]=>{
-        let nodes = this.selectorGenerators.map(gen =>{
-          return gen.getCurrentNodes()
-        })
-        let _nodes:Node[] = []
-        let nodesFlatten =  flatten(nodes.filter(item => item))
-        nodesFlatten.forEach(node=>{
-          if(!_nodes.find(item => item == node)){
-            _nodes.push(node)
-          }
-        })
-        return _nodes
-      }
-    }
-
-
-    let aa = new NodeGenerator(node.getChildren()[0]);
-
-
-
-
-
-    // let aa = getGeneratorNode(node.getChildren()[0]);
-    let s = selector.getChildren()[0]
-    s = s.getChildren()[1].getChildren()[0]
-    s.getChildren().map(item=>{
-      item.getChildren().map(i=>{
-        i.getChildren().map(item=>{
-          aa.findNodes(item)
-          console.log(aa.getCurrentNodes());
-          
-          console.log(aa);
-        })
-      })
-    })
-    
-    
-
+    let nodes = getNodes(targetGenerator,sourceRuleSet)
+    console.log(nodes);
+    return nodes
   }
   getCssSelectors(node:Node,){
 
