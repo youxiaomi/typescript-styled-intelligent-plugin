@@ -6,7 +6,7 @@ import { Node,NodeType } from 'vscode-css-languageservice/lib/umd/parser/cssNode
 import * as ts from 'typescript/lib/tsserverlibrary';
 
 type Ts  = typeof import("typescript/lib/tsserverlibrary")
-class EchoTemplateLanguageService implements TemplateLanguageService {
+class TemplateScssLanguageService implements TemplateLanguageService {
   // getCompletionsAtPosition(
   //     context: TemplateContext,
   //     position: ts.LineAndCharacter
@@ -33,7 +33,7 @@ class EchoTemplateLanguageService implements TemplateLanguageService {
   ts: typeof import("typescript/lib/tsserverlibrary")
   info: ts.server.PluginCreateInfo
   findNode = ()=>{
-
+    
   }
   
   public getDefinitionAndBoundSpan(context: TemplateContext, position: ts.LineAndCharacter): ts.DefinitionInfoAndBoundSpan{
@@ -364,8 +364,10 @@ function init(modules: { typescript: typeof import("typescript/lib/tsserverlibra
       return decorateWithTemplateLanguageService(
         modules.typescript,info.languageService,
         info.project,
-        new EchoTemplateLanguageService(modules.typescript,info),
+        new TemplateScssLanguageService(modules.typescript,info),
         {tags:['styled'],enableForStringWithSubstitutions: true})
+
+
       // Get a list of things to remove from the completion list from the config object.
       // If nothing was specified, we'll just remove 'caller'
       const whatToRemove: string[] = info.config.remove || ["caller"];

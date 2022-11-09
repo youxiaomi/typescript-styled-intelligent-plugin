@@ -32,7 +32,7 @@ var Member = styled.div`
 var a = true
 const getAge = ()=>{
   let   aa = 'a123'
-  let bb = 'b123'
+  let bb = aa ? 'aa' : 'b123'
   return a ? aa :      bb      
 }
 var ShowMemeber = (props:any)=>{
@@ -50,7 +50,7 @@ const AA = () => {
 
   return <div>
     <User className={`user ${u}`}>
-      < ShowMemeber>
+      <ShowMemeber>
 
       </ShowMemeber>
       { ShowMemeber({}) }
@@ -61,8 +61,8 @@ const AA = () => {
     <div>
 
     </div>
-    <User className='user'>
-      <div className='name'>tom</div>
+    <User className='user user2'>
+      <div className='name name2'>tom</div>
       <div className='name'>tom</div>
       <div className='age'>age</div>
     </User>

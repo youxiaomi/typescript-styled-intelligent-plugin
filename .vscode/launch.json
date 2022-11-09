@@ -6,16 +6,17 @@
     "configurations": [
         {
             "type": "node",
-            "name": "debuger test react",
+            "name": "debugerTestReact",
             "sourceMaps": true,
-            "runtimeExecutable": "ts-node",
-            // "runtimeArgs": ["out/test/react.test.js"],
-            "runtimeArgs": ["src/test/react.test.ts"],
+            "runtimeExecutable": "node",
+            "runtimeArgs": ["out/test/react.test.js"],
+            // "runtimeArgs": ["src/test/react.test.ts"],
             "outFiles": [
                 "${workspaceFolder}/**/*.js",
                 "/Users/squid/study/TypeScript-main/built/local/**/*.js",
                 // "/Users/squid/study/TypeScript-main/lib/**/*.js"
-            ]
+            ],
+            // "preLaunchTask": "${defaultBuildTask}"
         },
         {
             "type": "node",
@@ -48,6 +49,14 @@
                 "/Users/squid/study/vscode-css-languageservice/lib/umd/**/*.js"
             ],
             
+        },
+    ],
+    "compounds": [
+        {
+            "name": "Compound",
+            "configurations": ["debugerTestReact"],
+            "preLaunchTask": "${defaultBuildTask}",
+            "stopAll": true
         }
     ]
 }

@@ -4,6 +4,7 @@
 type Ts  = typeof import("typescript")
 // import  from 'typescript/lib/tsserverlibrary'
 import * as ts from 'typescript'
+import { unique } from '../utils/utils'
 
 export default class TsHelp {
   constructor(typescript: Ts,languageService: ts.LanguageService){
@@ -13,6 +14,9 @@ export default class TsHelp {
   }
   typescript:Ts
   languageService: ts.LanguageService
+  isInReferenceNode = (referenceNode:ts.ReferenceEntry,pos)=>{
+    return referenceNode.textSpan.start <= pos && referenceNode.textSpan.start+referenceNode.textSpan.length >= pos
+  }
   findNode(sourceFile: ts.SourceFile, position: number){
     let  find = (node: ts.Node): ts.Node | undefined  => {
       if (position >= node.getStart() && position < node.getEnd()) {
@@ -33,13 +37,19 @@ export default class TsHelp {
     let _node = find(sourceFile)
     return _node
   }
-  getStyledNameIdentifier(templateNode){
+  getStyledTemplateNodeNameIdentifier(templateNode){
     return templateNode.parent.parent
   }
-  getReferences(fileName,pos:number){
-    return this.languageService.getReferencesAtPosition(fileName,pos) || []
+  getReferences(fileName,pos:number,noSelf:boolean = true){
+    let references =  this.languageService.getReferencesAtPosition(fileName,pos) || []
+    return references.filter(reference=>{
+      if(noSelf && this.isInReferenceNode(reference,pos)){
+        return false
+      }
+      return reference
+    })
   }
-  getReferenceNodes(fileName,pos: number){
+  getReferenceNodes(fileName:string,pos: number,noSelf:boolean = true){
     let references = this.getReferences(fileName,pos);
     let program = this.languageService.getProgram()
     let referenceNodes = references?.map(reference => {
@@ -56,8 +66,18 @@ export default class TsHelp {
         return undefined
       }
     })
-
-    return referenceNodes.filter(reference => reference)
+    
+    referenceNodes = referenceNodes.filter(reference => {
+      if(!reference){
+        return false
+      }
+      if(noSelf){
+        return !(pos >= reference.pos  && pos  <= reference.end)
+      }
+      return true
+    })
+    referenceNodes = unique(referenceNodes)
+    return referenceNodes
   }
   getDefinition(fileName,pos:number){
     return  this.languageService.getDefinitionAtPosition(fileName,pos) || []
@@ -80,7 +100,31 @@ export default class TsHelp {
     })
   }
   isCustomJsxElement(node){
-    return node && node.containerName != 'JSX.IntrinsicElements'
+    // return node && node.containerName != 'JSX.IntrinsicElements'
+    return node && !['StyledComponentBase','JSX.IntrinsicElements'].includes(node.containerName)
+  }
+  getStyledTemplateScss = (node:ts.Node):string|undefined=>{
+    if(node.kind == ts.SyntaxKind.FirstStatement){
+      let _node = node as ts.VariableStatement
+      let { declarationList } = _node
+      let { declarations } = declarationList
+      let scssText:string | undefined= undefined
+      declarations.forEach(declaration=>{
+        if(declaration.initializer && declaration.initializer.kind == ts.SyntaxKind.TaggedTemplateExpression){
+          let node = declaration.initializer  as ts.TaggedTemplateExpression
+          scssText = node.template.getFullText()
+        }
+      })
+      return scssText
+    }
+  }
+
+  getJsxOpeningElementIdentier = (openingElement: ts.JsxOpeningElement)=>{
+    return  ts.forEachChild(openingElement,(node)=>{
+      if(node.kind == ts.SyntaxKind.Identifier){
+        return node
+      }
+    });
   }
   
 }

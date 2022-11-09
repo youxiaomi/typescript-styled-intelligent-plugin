@@ -5,6 +5,7 @@ type Ts  = typeof import("typescript")
 // import  from 'typescript/lib/tsserverlibrary'
 import * as ts from 'typescript'
 import TsHelp from '../service/tsHelp'
+import { findResult, flatten } from '../utils/utils'
 
 function extractCssSelectorWorkWrap ({ node,languageService, tsHelp, fileName }:{node,languageService:ts.LanguageService, tsHelp: TsHelp, fileName}){
   // return extractCssSelectorWork()
@@ -67,7 +68,15 @@ function extractCssSelectorWorkWrap ({ node,languageService, tsHelp, fileName }:
         return  tsHelp.findNodeByRange(sourceFile,defineNode.contextSpan?.start,defineNode.contextSpan.start + defineNode.contextSpan.length)
       })
 
-      customElementChildren = customElementNodes?.map(extractCssSelectorWork).filter(node => node)
+      customElementChildren = customElementNodes?.map(extractCssSelectorWork).filter(node => {
+        const isValidCustomElementChildren = (node)=>{
+          return node && node.tsNode.kind != ts.SyntaxKind.TaggedTemplateExpression
+        }
+        if(Array.isArray(node)){
+          return node.filter(isValidCustomElementChildren).length
+        }
+        return isValidCustomElementChildren(node)
+      })
     }
     
     console.log(node.getFullText(),'2222');
@@ -228,8 +237,126 @@ export default class CssSelectorParser{
     
     return extractClassNameNode
   }
-  flatClassNameChildrenNodes(node){
+  getCssSelectorNode = (fileName: string,pos)=>{
+    let program = this.languageService.getProgram()
+    let sourceFile = program?.getSourceFile(fileName);
+    if(!sourceFile){
+      return 
+    }
+    let node = this.tsHelp.findNode(sourceFile,pos) as ts.Node;
+    if(!node){
+      return 
+    }
+    if(node.kind != ts.SyntaxKind.StringLiteral){
+      return
+    }
+    let stringNode = node
 
+    let styledNode = []
+    node = node.parent
+
+
+    const workVariableDeclarationwork = (node:ts.VariableDeclaration,child)=>{
+      let stringReferences = this.tsHelp.getReferences(fileName,node.getStart());
+      let stringNodeReferences = stringReferences.map(reference=>{
+        return this.tsHelp.findNode(sourceFile!,reference.textSpan.start)
+      })
+      return stringNodeReferences.map(referenceNode=>{
+        return findStyledNode(referenceNode!)
+      })
+    }
+    const workArrowFunction = (node:ts.ArrowFunction,child)=>{
+      ts.forEachChild(node.body,(_node)=>{
+        if(_node.kind == ts.SyntaxKind.ReturnStatement){
+          //exist node
+          console.log();
+        }
+      })
+    }
+    const workConditionalExpression = (node:ts.ConditionalExpression,child)=>{
+      return findStyledNode(node.parent)
+    }
+    const workJsxAttribute = (node:ts.JsxAttribute)=>{
+      let { name } = node
+      if(name.escapedText == 'className'){
+        return findStyledNode(node.parent)
+      }
+    }
+    const workJsxOpeningElement = (node:ts.JsxOpeningElement)=>{
+      let identifier = this.tsHelp.getJsxOpeningElementIdentier(node);
+      if(identifier){
+        if(this.tsHelp.isCustomJsxElement(node)){
+          //todo node 判断
+          let referenceNodes = this.tsHelp.getReferenceNodes(fileName,identifier.pos) as  ts.Node[]
+          let scssText = findResult(referenceNodes,this.tsHelp.getStyledTemplateScss)
+          if(scssText){
+            return {
+              scssText: scssText,
+              tsNode: node,
+              parent: node.parent && findStyledNode(node.parent.parent) || undefined
+            }
+          }
+        }else{
+          //   ts
+          // }
+        }
+      }
+    }
+    const workJsxElement = (node: ts.JsxElement)=>{
+      return findStyledNode(node)
+    }
+    const findStyledNode = (node:ts.Node,child?)=>{
+      var aa = sourceFile;var a1  = this;
+      console.log(ts.SyntaxKind[node.kind],node.getFullText());
+      //CallExpression getAge()
+      switch(node.kind){
+        case ts.SyntaxKind.VariableDeclaration:
+          return workVariableDeclarationwork(node as ts.VariableDeclaration,child);
+        // case ts.SyntaxKind.ArrowFunction:
+        //   return workArrowFunction(node as ts.ArrowFunction,child);
+        case ts.SyntaxKind.ConditionalExpression:
+          // return workConditionalExpression(node as ts.ConditionalExpression,child)
+        case ts.SyntaxKind.Identifier:
+        case ts.SyntaxKind.ReturnStatement:
+        case ts.SyntaxKind.ArrowFunction:
+        case ts.SyntaxKind.FunctionDeclaration:
+        case ts.SyntaxKind.Block:
+        case ts.SyntaxKind.CallExpression:
+        case ts.SyntaxKind.TemplateSpan:
+        case ts.SyntaxKind.TemplateExpression:
+        case ts.SyntaxKind.JsxExpression:
+        case ts.SyntaxKind.JsxAttributes:
+          return findStyledNode(node.parent);
+        case ts.SyntaxKind.JsxAttribute:
+          return workJsxAttribute(node as ts.JsxAttribute);
+        case ts.SyntaxKind.JsxOpeningElement:
+          return workJsxOpeningElement(node as ts.JsxOpeningElement)
+        case ts.SyntaxKind.JsxElement:
+          return workJsxOpeningElement((node as ts.JsxElement).openingElement)
+        default:
+          return findStyledNode(node.parent)
+      }
+    }
+
+    let child
+    node = findStyledNode(node,child)
+    // while(node){
+    //   console.log(ts.SyntaxKind[node.kind]);
+
+    //   // node = node?.parent
+    // }
+    let references = this.languageService.getReferencesAtPosition(fileName,pos)
+    
+    references?.map(reference=>{
+      let sourceFile = program?.getSourceFile(reference.fileName)
+      let node = this.tsHelp.findNode(sourceFile!, reference.textSpan.start)
+      console.log(node);
+      
+    })
+  }
+  flatClassNameChildrenNodes(node){
+    // wait optmize
+    // const flatArrayFn = flatten
     const flatArrayFn = (node)=>{
       let flatArray:any = []
       if(Array.isArray(node)){
@@ -270,13 +397,7 @@ export default class CssSelectorParser{
     return flatNodes(node)
 
   }
-
-
-
-}
-
-namespace CssSeleect {
-
+  
 
 
 }
