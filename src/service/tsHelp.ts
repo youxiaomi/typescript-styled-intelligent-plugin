@@ -103,19 +103,24 @@ export default class TsHelp {
     // return node && node.containerName != 'JSX.IntrinsicElements'
     return node && !['StyledComponentBase','JSX.IntrinsicElements'].includes(node.containerName)
   }
-  getStyledTemplateScss = (node:ts.Node):string|undefined=>{
+  getStyledTemplateScss = (node:ts.Node):{scssText:string,TaggedTemplateNode:ts.TaggedTemplateExpression}|undefined=>{
     if(node.kind == ts.SyntaxKind.FirstStatement){
       let _node = node as ts.VariableStatement
       let { declarationList } = _node
       let { declarations } = declarationList
-      let scssText:string | undefined= undefined
+      let scssText:string = ''
+      let TaggedTemplateNode
       declarations.forEach(declaration=>{
         if(declaration.initializer && declaration.initializer.kind == ts.SyntaxKind.TaggedTemplateExpression){
           let node = declaration.initializer  as ts.TaggedTemplateExpression
-          scssText = node.template.getFullText()
+          scssText = node.template.getFullText();
+          TaggedTemplateNode = declaration.initializer
         }
       })
-      return scssText
+      return {
+        scssText: scssText,
+        TaggedTemplateNode,
+      }
     }
   }
 

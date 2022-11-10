@@ -5,12 +5,11 @@ type Ts  = typeof import("typescript")
 // import  from 'typescript/lib/tsserverlibrary'
 import * as ts from 'typescript'
 import TsHelp from '../service/tsHelp'
-import { findResult, flatten } from '../utils/utils'
+import { findResult, flatten, unique } from '../utils/utils'
 
-function extractCssSelectorWorkWrap ({ node,languageService, tsHelp, fileName }:{node,languageService:ts.LanguageService, tsHelp: TsHelp, fileName}){
-  // return extractCssSelectorWork()
-
-
+function extractCssSelectorWorkWrap ({ node,languageService, tsHelp,  }:{node:ts.Node,languageService:ts.LanguageService, tsHelp: TsHelp}){
+  const sourceFile = node.getSourceFile()
+  let fileName = sourceFile.fileName
 
   function extractVariableStatement(node: ts.VariableStatement){
     return ts.forEachChild(node.declarationList,extractCssSelectorWork)
@@ -87,7 +86,7 @@ function extractCssSelectorWorkWrap ({ node,languageService, tsHelp, fileName }:
     chidlrens = chidlrens.filter(child => child)
     return {
       type:'jsxElement',
-      className: className,
+      className: flatten(className),
       children: [...chidlrens,...customElementChildren],
       tsNode:node,
     }
@@ -222,13 +221,13 @@ export default class CssSelectorParser{
   typescript:Ts
   languageService: ts.LanguageService
   tsHelp: TsHelp
-  parseCssSelector(node: ts.JsxElement | undefined,fileName){
+  parseCssSelector = (node: ts.JsxElement | undefined)=>{
     let languageService = this.languageService
     if(!node || node.kind != ts.SyntaxKind.JsxElement){
       return undefined
     }
     const extractClassNameNode =  extractCssSelectorWorkWrap({
-      node,languageService,tsHelp:this.tsHelp,fileName
+      node,languageService,tsHelp:this.tsHelp
     })
 
     console.log(extractClassNameNode)
@@ -255,14 +254,16 @@ export default class CssSelectorParser{
     let styledNode = []
     node = node.parent
 
-
     const workVariableDeclarationwork = (node:ts.VariableDeclaration,child)=>{
       let stringReferences = this.tsHelp.getReferences(fileName,node.getStart());
       let stringNodeReferences = stringReferences.map(reference=>{
         return this.tsHelp.findNode(sourceFile!,reference.textSpan.start)
       })
-      return stringNodeReferences.map(referenceNode=>{
+      let result = stringNodeReferences.map(referenceNode=>{
         return findStyledNode(referenceNode!)
+      }).filter(item => item)
+      return unique(flatten(result),(pre,current)=>{
+        return pre.tsNode == current.tsNode
       })
     }
     const workArrowFunction = (node:ts.ArrowFunction,child)=>{
@@ -285,20 +286,25 @@ export default class CssSelectorParser{
     const workJsxOpeningElement = (node:ts.JsxOpeningElement)=>{
       let identifier = this.tsHelp.getJsxOpeningElementIdentier(node);
       if(identifier){
-        if(this.tsHelp.isCustomJsxElement(node)){
-          //todo node 判断
+        let definitions = this.tsHelp.getDefinition(fileName,identifier.pos);
+        let isCustomeJsxElement = definitions.find(node=>this.tsHelp.isCustomJsxElement(node))
+        if(isCustomeJsxElement){
           let referenceNodes = this.tsHelp.getReferenceNodes(fileName,identifier.pos) as  ts.Node[]
-          let scssText = findResult(referenceNodes,this.tsHelp.getStyledTemplateScss)
+          let {scssText} = findResult(referenceNodes,this.tsHelp.getStyledTemplateScss) || {}
           if(scssText){
             return {
+              type: 'styledElement',
               scssText: scssText,
-              tsNode: node,
-              parent: node.parent && findStyledNode(node.parent.parent) || undefined
+              tsNode: node.parent,
+              parent: node.parent && node.parent.parent && findStyledNode(node.parent.parent) || undefined
             }
+          }else{
+            return node.parent && node.parent.parent && findStyledNode(node.parent.parent) || undefined
           }
         }else{
           //   ts
           // }
+          return node.parent && node.parent.parent && findStyledNode(node.parent.parent) || undefined
         }
       }
     }
@@ -333,6 +339,8 @@ export default class CssSelectorParser{
           return workJsxOpeningElement(node as ts.JsxOpeningElement)
         case ts.SyntaxKind.JsxElement:
           return workJsxOpeningElement((node as ts.JsxElement).openingElement)
+        case ts.SyntaxKind.JsxClosingElement:
+          return undefined
         default:
           return findStyledNode(node.parent)
       }
@@ -340,6 +348,9 @@ export default class CssSelectorParser{
 
     let child
     node = findStyledNode(node,child)
+    let aa = this.parseCssSelector(node[0].tsNode)
+    console.log(aa);
+    //todo  查找dom点击节点
     // while(node){
     //   console.log(ts.SyntaxKind[node.kind]);
 
@@ -354,6 +365,7 @@ export default class CssSelectorParser{
       
     })
   }
+
   flatClassNameChildrenNodes(node){
     // wait optmize
     // const flatArrayFn = flatten

@@ -67,7 +67,7 @@ const referenceNode = tsHelp.getReferenceNodes(testFiles.fileName,  styledNode?.
 console.log(referenceNode)
 
 const cssSelectorParser =  new CssSelectorParser(ts,languageService,tsHelp)
-let res = cssSelectorParser.parseCssSelector(referenceNode[0] as ts.JsxElement, testFiles.fileName)
+let res = cssSelectorParser.parseCssSelector(referenceNode[0] as ts.JsxElement)
 console.log(res);
 
 cssSelectorParser.getCssSelectorNode(testFiles.fileName,testFiles?.getFullText().indexOf('b123'))

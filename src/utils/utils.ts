@@ -3,6 +3,9 @@
 
 
 export const flatten = (array: any[]) => {
+  if(!Array.isArray(array)){
+    return array
+  }
   let _array: any[] = []
   array.forEach(item => {
     if (Array.isArray(item)) {
@@ -14,10 +17,17 @@ export const flatten = (array: any[]) => {
   return _array
 }
 
-export const unique = <T>(array:T[]):T[]=>{
+export const unique = <T>(array:T[],callback?:(pre:T,current:T)=>boolean):T[]=>{
   let _array:T[] = []
+  const isSame = (pre,current)=>{
+    if(callback){
+      return callback(pre,current)
+    }else{
+      return pre == current
+    }
+  }
   array.forEach(item=>{
-    if(!_array.find(arr =>arr == item)){
+    if(!_array.find(arr =>isSame(arr,item))){
       _array.push(item)
     }
   })
