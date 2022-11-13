@@ -2,20 +2,28 @@
 
 
 
-export const flatten = (array: any[]) => {
+export const flatten = (array: any[],options:{deep?:boolean  } = {}) => {
   if(!Array.isArray(array)){
     return array
   }
-  let _array: any[] = []
-  array.forEach(item => {
-    if (Array.isArray(item)) {
-      _array = [..._array, ...item]
-    } else {
-      _array.push(item)
-    }
-  })
-  return _array
+  const flattenArray = (array:any[])=>{
+    let _array: any[] = []
+    array.forEach(item => {
+      if (Array.isArray(item)) {
+        if(options.deep){
+          _array = [..._array, ...flattenArray(item)]
+        }else{
+          _array = [..._array, ...item]
+        }
+      } else {
+        _array.push(item)
+      }
+    })
+    return _array
+  }
+  return flattenArray(array)
 }
+
 
 export const unique = <T>(array:T[],callback?:(pre:T,current:T)=>boolean):T[]=>{
   let _array:T[] = []

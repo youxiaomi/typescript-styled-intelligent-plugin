@@ -60,14 +60,14 @@ let references = languageService.getReferencesAtPosition(testFiles?.fileName || 
 
 
 const tsHelp = new TsHelp(ts, languageService);
-const styledNode = tsHelp.findNode(testFiles, testFiles?.getFullText().indexOf('User'))
+// const styledNode = tsHelp.findNode(testFiles, testFiles?.getFullText().indexOf('User'))
 
-const referenceNode = tsHelp.getReferenceNodes(testFiles.fileName,  styledNode?.pos || 0)
+// const referenceNode = tsHelp.getReferenceNodes(testFiles.fileName,  styledNode?.pos || 0)
 
-console.log(referenceNode)
+// console.log(referenceNode)
 
 const cssSelectorParser =  new CssSelectorParser(ts,languageService,tsHelp)
-let res = cssSelectorParser.parseCssSelector(referenceNode[0] as ts.JsxElement)
-console.log(res);
+// let res = cssSelectorParser.parseCssSelector(referenceNode[0] as ts.JsxElement)
+// console.log(res);
 
 cssSelectorParser.getCssSelectorNode(testFiles.fileName,testFiles?.getFullText().indexOf('b123'))

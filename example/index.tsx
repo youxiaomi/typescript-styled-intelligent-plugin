@@ -25,6 +25,9 @@ var Member = styled.div`
     width: ${p=>p ? '100px':'110px'};
     height: ${p=>p ? '100':'110'}px;
   }
+  .b123{
+    color:red;
+  }
   .member{
     height: 120px;
   }
@@ -39,7 +42,7 @@ var ShowMemeber = (props:any)=>{
 
 
   return <div>
-    <Member className={`bbbb ${getAge()} member ${u} aaaa`}>
+    <Member id='testid' className={`bbbb ${getAge()} member ${u} aaaa`}>
       <div className='member-age'></div>
     </Member>
   </div>

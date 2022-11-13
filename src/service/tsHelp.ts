@@ -4,6 +4,7 @@
 type Ts  = typeof import("typescript")
 // import  from 'typescript/lib/tsserverlibrary'
 import * as ts from 'typescript'
+import { containerNames } from '../parser/types'
 import { unique } from '../utils/utils'
 
 export default class TsHelp {
@@ -102,6 +103,15 @@ export default class TsHelp {
   isCustomJsxElement(node){
     // return node && node.containerName != 'JSX.IntrinsicElements'
     return node && !['StyledComponentBase','JSX.IntrinsicElements'].includes(node.containerName)
+  }
+  isFunctionComponent = (node)=>{
+    return node && ![containerNames.JsxIntrinsicElements,containerNames.StyledComponentBase].includes(node.containerName)
+  }
+  isIntrinsicElement = (defineNode:ts.DefinitionInfo)=>{
+    return defineNode.containerName === containerNames.JsxIntrinsicElements
+  }
+  isStyledComponentElement = (defineNode:ts.DefinitionInfo)=>{
+    return defineNode.containerName === containerNames.StyledComponentBase
   }
   getStyledTemplateScss = (node:ts.Node):{scssText:string,TaggedTemplateNode:ts.TaggedTemplateExpression}|undefined=>{
     if(node.kind == ts.SyntaxKind.FirstStatement){

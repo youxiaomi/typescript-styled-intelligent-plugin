@@ -6,211 +6,17 @@ type Ts  = typeof import("typescript")
 import * as ts from 'typescript'
 import TsHelp from '../service/tsHelp'
 import { findResult, flatten, unique } from '../utils/utils'
+import extractCssSelectorWorkWrap, { JsxElementNode } from './extractCssSelector'
 
-function extractCssSelectorWorkWrap ({ node,languageService, tsHelp,  }:{node:ts.Node,languageService:ts.LanguageService, tsHelp: TsHelp}){
-  const sourceFile = node.getSourceFile()
-  let fileName = sourceFile.fileName
 
-  function extractVariableStatement(node: ts.VariableStatement){
-    return ts.forEachChild(node.declarationList,extractCssSelectorWork)
-  }
-  function extractVariableDeclaration(node: ts.VariableDeclaration){
-    let { initializer } = node
-    return extractCssSelectorWork(initializer)
-  }
-  function extractArrowFunction(node: ts.ArrowFunction){
-    let { body } = node
-    return extractCssSelectorWork(body);
-  }
-  function extractBlock(node: ts.Block){
-    let { statements = [] } = node
-    let returnStatements =  statements.filter(statement=>{
-      return statement.kind == ts.SyntaxKind.ReturnStatement
-    })  as ts.ReturnStatement[]
-    return returnStatements.map((statement) => extractCssSelectorWork(statement.expression))
-  }
-  function extractConditionalExpression(node: ts.ConditionalExpression){
-    let {whenFalse,whenTrue} = node
-    let nodes = [
-      whenFalse,
-      whenTrue
-    ].filter(item => item);
-    let references = nodes.map(node=>{  
-      return extractCssSelectorWork(node)
-      // return (languageService.getDefinitionAtPosition(fileName,node.pos+1)||[]).filter(reference =>  reference)
-    })
-
-    return  references
-  }
-  function extractJsxElement(node: ts.JsxElement){
-    console.log(languageService);
-    let sourceFile = node.getSourceFile()
-    let { attributes } = node.openingElement;
-
-    let identiferNode = ts.forEachChild(node.openingElement,(node)=>{
-      if(node.kind == ts.SyntaxKind.Identifier){
-        return node
-      }
-    });
-    let customElementChildren:any[] = []
-    if(identiferNode){
-      console.log(node.getFullText(),'-----');
-      
-      let identiferNodeReferences = languageService.getDefinitionAtPosition(sourceFile.fileName,identiferNode.getStart())
-      let customDefineElement = identiferNodeReferences?.filter(tsHelp.isCustomJsxElement) || []
-      let program = languageService.getProgram()
-      let customElementNodes = customDefineElement.map(defineNode=>{
-        let sourceFile = program?.getSourceFile(defineNode.fileName)
-        if(!sourceFile || !defineNode.contextSpan){
-          return 
-        }
-        return  tsHelp.findNodeByRange(sourceFile,defineNode.contextSpan?.start,defineNode.contextSpan.start + defineNode.contextSpan.length)
-      })
-
-      customElementChildren = customElementNodes?.map(extractCssSelectorWork).filter(node => {
-        const isValidCustomElementChildren = (node)=>{
-          return node && node.tsNode.kind != ts.SyntaxKind.TaggedTemplateExpression
-        }
-        if(Array.isArray(node)){
-          return node.filter(isValidCustomElementChildren).length
-        }
-        return isValidCustomElementChildren(node)
-      })
-    }
-    
-    console.log(node.getFullText(),'2222');
-    
-
-    let className = ts.forEachChild(attributes,extractCssSelectorWork)
-    let chidlrens =  ts.forEachChild(node,extractCssSelectorWork,extractCssSelectorWorkNodes)
-    chidlrens = chidlrens.filter(child => child)
-    return {
-      type:'jsxElement',
-      className: flatten(className),
-      children: [...chidlrens,...customElementChildren],
-      tsNode:node,
-    }
-  }
-  function extractJsxAttribution(node: ts.JsxAttribute){
-    node.initializer
-    if(node.name.escapedText == 'className'){
-      return extractCssSelectorWork(node.initializer)
-    }
-  }
-  function extractJsxExpress(node: ts.JsxExpression){
-    return extractCssSelectorWork(node.expression)
-  }
-  function extractTemplateExpression(node: ts.TemplateExpression){
-    let { head ,templateSpans} = node
-    let templateSpansNodes = templateSpans.map(extractCssSelectorWork)
-    if(head.text.trim()){
-      templateSpansNodes.unshift(head)
-    }
-    return templateSpansNodes
-  }
-  function extractTemplateSpan(node: ts.TemplateSpan){
-    let { literal ,expression} = node
-    let templateSpanNode = [extractCssSelectorWork(expression)]
-    if(literal.text.trim()){
-      templateSpanNode.push(literal)
-    }
-    return templateSpanNode
-  }
-  function extractIdentifier(node: ts.Identifier){
-    let definitionNodes = tsHelp.getDefinitionNodes(fileName,node.getStart());
-    let validNodes = definitionNodes.filter((refNode)=>{
-      return refNode
-    })
-    return validNodes.map(extractCssSelectorWork)
-    let nodes = validNodes.map(node =>{
-      // return tsServer.findNodeByRange(node)
-    })
-  }
-  function extractCallExpression(node: ts.CallExpression){
-    let {  expression,arguments:_arguments  }  = node
-    return  extractCssSelectorWork(expression)
-  }
-  function extractVariableDeclarationList(node: ts.VariableDeclarationList){
-    return ts.forEachChild(node,extractCssSelectorWork)
-  }
-  function extractFirstStatement(node: ts.VariableStatement){
-    // extractCssSelectorWork(node.expression)
-    // let { literal ,expression} = node
-    let { declarationList }  = node
-    // extractCssSelectorWork(declarationList)
-    return ts.forEachChild(declarationList,extractCssSelectorWork)
-  }
- 
-  function extractStringLiteral(node: ts.StringLiteral){
-    let { text,} = node
-    return node
-  }
-  function extractTaggedTemplateExpression(node: ts.TaggedTemplateExpression){
-    const  { tag,template } = node
-    console.log(template);
-    //todo  提取css对象 关联上同级className
-    return {
-      type: 'styledTeamplte',
-      tag,
-      tsNode: node,
-
-    }
-    // extractCssSelectorWork(node.expression)
-    // let { literal ,expression} = node
-
-  }
-  function extract_(node: ts.Identifier){
-    // extractCssSelectorWork(node.expression)
-    // let { literal ,expression} = node
-
-  }
-  
-  function extractCssSelectorWork(node: ts.Node| undefined){
-    if(!node){
-      return 
-    }
-    switch (node?.kind){
-      case ts.SyntaxKind.VariableStatement: 
-        return extractVariableStatement(node as ts.VariableStatement);
-      case ts.SyntaxKind.VariableDeclaration:
-        return extractVariableDeclaration(node as ts.VariableDeclaration);
-      case ts.SyntaxKind.ArrowFunction:
-        return extractArrowFunction(node as ts.ArrowFunction)
-      case ts.SyntaxKind.Block:
-        return extractBlock(node as ts.Block)
-      case ts.SyntaxKind.ConditionalExpression:
-        return extractConditionalExpression(node as ts.ConditionalExpression)
-      case ts.SyntaxKind.JsxElement:
-        return extractJsxElement(node as ts.JsxElement);
-      case ts.SyntaxKind.JsxAttribute:
-        return extractJsxAttribution(node as ts.JsxAttribute);
-      case ts.SyntaxKind.JsxExpression:
-        return extractJsxExpress(node as ts.JsxExpression)
-      case ts.SyntaxKind.TemplateExpression:
-        return extractTemplateExpression(node as ts.TemplateExpression)
-      case ts.SyntaxKind.TemplateSpan:
-        return extractTemplateSpan(node as ts.TemplateSpan);
-      case ts.SyntaxKind.Identifier:
-        return extractIdentifier(node as ts.Identifier);
-      case ts.SyntaxKind.CallExpression:
-        return extractCallExpression(node as ts.CallExpression);
-      case ts.SyntaxKind.VariableDeclarationList:
-        return extractVariableDeclarationList(node as ts.VariableDeclarationList);
-      case ts.SyntaxKind.FirstStatement:
-        return extractFirstStatement(node as ts.VariableStatement);
-      case ts.SyntaxKind.StringLiteral:
-        return extractStringLiteral(node as ts.StringLiteral);
-      case ts.SyntaxKind.TaggedTemplateExpression:
-        return extractTaggedTemplateExpression(node as ts.TaggedTemplateExpression)
-
-    }
-  }
-  function extractCssSelectorWorkNodes(nodes){
-    return nodes.map(extractCssSelectorWork)
-  }
-
-  return extractCssSelectorWork(node)
+type CssStyledNode = {
+  type: 'styledElement',
+  tsNode: ts.Node,
+  scssText: string,
+  parent: CssStyledNode[]
 }
+
+
 export default class CssSelectorParser{
 
   constructor(typescript: Ts,languageService: ts.LanguageService,tsHelp: TsHelp){
@@ -221,20 +27,20 @@ export default class CssSelectorParser{
   typescript:Ts
   languageService: ts.LanguageService
   tsHelp: TsHelp
-  parseCssSelector = (node: ts.JsxElement | undefined)=>{
+  parseCssSelector = (node: ts.JsxElement | undefined):JsxElementNode[]|undefined=>{
     let languageService = this.languageService
     if(!node || node.kind != ts.SyntaxKind.JsxElement){
       return undefined
     }
-    const extractClassNameNode =  extractCssSelectorWorkWrap({
+    const extractSelectorNode =  extractCssSelectorWorkWrap({
       node,languageService,tsHelp:this.tsHelp
     })
 
-    console.log(extractClassNameNode)
-    let aa = this.flatClassNameChildrenNodes(extractClassNameNode)
-    console.log(aa);
+    console.log(extractSelectorNode)
+    // let aa = this.flatClassNameChildrenNodes(extractSelectorNode)
+    // console.log(aa);
     
-    return extractClassNameNode
+    return extractSelectorNode
   }
   getCssSelectorNode = (fileName: string,pos)=>{
     let program = this.languageService.getProgram()
@@ -254,7 +60,7 @@ export default class CssSelectorParser{
     let styledNode = []
     node = node.parent
 
-    const workVariableDeclarationwork = (node:ts.VariableDeclaration,child)=>{
+    const workVariableDeclarationwork = (node:ts.VariableDeclaration)=>{
       let stringReferences = this.tsHelp.getReferences(fileName,node.getStart());
       let stringNodeReferences = stringReferences.map(reference=>{
         return this.tsHelp.findNode(sourceFile!,reference.textSpan.start)
@@ -266,24 +72,13 @@ export default class CssSelectorParser{
         return pre.tsNode == current.tsNode
       })
     }
-    const workArrowFunction = (node:ts.ArrowFunction,child)=>{
-      ts.forEachChild(node.body,(_node)=>{
-        if(_node.kind == ts.SyntaxKind.ReturnStatement){
-          //exist node
-          console.log();
-        }
-      })
-    }
-    const workConditionalExpression = (node:ts.ConditionalExpression,child)=>{
-      return findStyledNode(node.parent)
-    }
     const workJsxAttribute = (node:ts.JsxAttribute)=>{
       let { name } = node
       if(name.escapedText == 'className'){
         return findStyledNode(node.parent)
       }
     }
-    const workJsxOpeningElement = (node:ts.JsxOpeningElement)=>{
+    const workJsxOpeningElement = (node:ts.JsxOpeningElement):CssStyledNode[] | undefined=>{
       let identifier = this.tsHelp.getJsxOpeningElementIdentier(node);
       if(identifier){
         let definitions = this.tsHelp.getDefinition(fileName,identifier.pos);
@@ -292,12 +87,14 @@ export default class CssSelectorParser{
           let referenceNodes = this.tsHelp.getReferenceNodes(fileName,identifier.pos) as  ts.Node[]
           let {scssText} = findResult(referenceNodes,this.tsHelp.getStyledTemplateScss) || {}
           if(scssText){
-            return {
-              type: 'styledElement',
-              scssText: scssText,
-              tsNode: node.parent,
-              parent: node.parent && node.parent.parent && findStyledNode(node.parent.parent) || undefined
-            }
+            return [
+              {
+                type: 'styledElement',
+                scssText: scssText,
+                tsNode: node.parent,
+                parent: node.parent && node.parent.parent && findStyledNode(node.parent.parent) || []
+              }
+            ]
           }else{
             return node.parent && node.parent.parent && findStyledNode(node.parent.parent) || undefined
           }
@@ -311,28 +108,28 @@ export default class CssSelectorParser{
     const workJsxElement = (node: ts.JsxElement)=>{
       return findStyledNode(node)
     }
-    const findStyledNode = (node:ts.Node,child?)=>{
+    const findStyledNode = (node:ts.Node):CssStyledNode[]|undefined=>{
       var aa = sourceFile;var a1  = this;
       console.log(ts.SyntaxKind[node.kind],node.getFullText());
       //CallExpression getAge()
       switch(node.kind){
         case ts.SyntaxKind.VariableDeclaration:
-          return workVariableDeclarationwork(node as ts.VariableDeclaration,child);
+          return workVariableDeclarationwork(node as ts.VariableDeclaration);
         // case ts.SyntaxKind.ArrowFunction:
         //   return workArrowFunction(node as ts.ArrowFunction,child);
-        case ts.SyntaxKind.ConditionalExpression:
-          // return workConditionalExpression(node as ts.ConditionalExpression,child)
-        case ts.SyntaxKind.Identifier:
-        case ts.SyntaxKind.ReturnStatement:
-        case ts.SyntaxKind.ArrowFunction:
-        case ts.SyntaxKind.FunctionDeclaration:
-        case ts.SyntaxKind.Block:
-        case ts.SyntaxKind.CallExpression:
-        case ts.SyntaxKind.TemplateSpan:
-        case ts.SyntaxKind.TemplateExpression:
-        case ts.SyntaxKind.JsxExpression:
-        case ts.SyntaxKind.JsxAttributes:
-          return findStyledNode(node.parent);
+        // case ts.SyntaxKind.ConditionalExpression:
+        //   // return workConditionalExpression(node as ts.ConditionalExpression,child)
+        // case ts.SyntaxKind.Identifier:
+        // case ts.SyntaxKind.ReturnStatement:
+        // case ts.SyntaxKind.ArrowFunction:
+        // case ts.SyntaxKind.FunctionDeclaration:
+        // case ts.SyntaxKind.Block:
+        // case ts.SyntaxKind.CallExpression:
+        // case ts.SyntaxKind.TemplateSpan:
+        // case ts.SyntaxKind.TemplateExpression:
+        // case ts.SyntaxKind.JsxExpression:
+        // case ts.SyntaxKind.JsxAttributes:
+        //   return findStyledNode(node.parent);
         case ts.SyntaxKind.JsxAttribute:
           return workJsxAttribute(node as ts.JsxAttribute);
         case ts.SyntaxKind.JsxOpeningElement:
@@ -346,10 +143,15 @@ export default class CssSelectorParser{
       }
     }
 
-    let child
-    node = findStyledNode(node,child)
-    let aa = this.parseCssSelector(node[0].tsNode)
-    console.log(aa);
+    let _node = findStyledNode(node)
+    // let aa = this.parseCssSelector(node[0].tsNode)
+    // let aa = this.parseCssSelector(node[0].parent[0].tsNode)
+    // if(aa){
+      this.getSelectors(_node!,stringNode)
+    // }
+    // console.log(aa);
+
+
     //todo  查找dom点击节点
     // while(node){
     //   console.log(ts.SyntaxKind[node.kind]);
@@ -373,7 +175,7 @@ export default class CssSelectorParser{
       let flatArray:any = []
       if(Array.isArray(node)){
         node.map((item)=>{
-          let flatItem = flatNodes(item)
+          let flatItem = flattenNodes(item)
           if(Array.isArray(flatItem)){
             flatArray = [...flatArray,...flatItem]
           }else{
@@ -385,13 +187,13 @@ export default class CssSelectorParser{
         return node
       }
     }
-    const flatNodes = (node)=>{
+    const flattenNodes = (node)=>{
       if(node.tsNode && node.tsNode.kind == ts.SyntaxKind.JsxElement){
         let arrays = node.children || []
         let className = node.className || []
         let flatArray:any[] = []
         arrays.map((item)=>{
-          let flatItem = flatNodes(item)
+          let flatItem = flattenNodes(item)
           if(Array.isArray(flatItem)){
             flatArray = [...flatArray,...flatItem]
           }else{
@@ -406,7 +208,23 @@ export default class CssSelectorParser{
       } 
     }
 
-    return flatNodes(node)
+    return flattenNodes(node)
+
+  }
+  getSelectors = (selectors:CssStyledNode[],sourceSelector:ts.Node)=>{
+    console.log(selectors);
+    
+    let aa = selectors.filter(selector=> {
+      if(selector.type == 'styledElement'){
+        if(selector.scssText.match(sourceSelector.getText())){
+          let parseCss = this.parseCssSelector(selector.tsNode as ts.JsxElement)
+          
+        }
+      }
+
+    })
+
+    return aa
 
   }
   
