@@ -2,7 +2,7 @@
 
 
 
-export const flatten = (array: any[],options:{deep?:boolean  } = {}) => {
+export const flatten = <T>(array: T[][],options:{deep?:boolean  } = {}):T[] => {
   if(!Array.isArray(array)){
     return array
   }

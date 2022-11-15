@@ -9,11 +9,11 @@ import { findResult, flatten, unique } from '../utils/utils'
 import extractCssSelectorWorkWrap, { JsxElementNode } from './extractCssSelector'
 
 
-type CssStyledNode = {
+type StyledComponentNode = {
   type: 'styledElement',
   tsNode: ts.Node,
   scssText: string,
-  parent: CssStyledNode[]
+  parent: StyledComponentNode[]
 }
 
 
@@ -27,10 +27,10 @@ export default class CssSelectorParser{
   typescript:Ts
   languageService: ts.LanguageService
   tsHelp: TsHelp
-  parseCssSelector = (node: ts.JsxElement | undefined):JsxElementNode[]|undefined=>{
+  parseCssSelector = (node: ts.JsxElement | undefined):JsxElementNode[]=>{
     let languageService = this.languageService
     if(!node || node.kind != ts.SyntaxKind.JsxElement){
-      return undefined
+      return []
     }
     const extractSelectorNode =  extractCssSelectorWorkWrap({
       node,languageService,tsHelp:this.tsHelp
@@ -39,10 +39,9 @@ export default class CssSelectorParser{
     console.log(extractSelectorNode)
     // let aa = this.flatClassNameChildrenNodes(extractSelectorNode)
     // console.log(aa);
-    
     return extractSelectorNode
   }
-  getCssSelectorNode = (fileName: string,pos)=>{
+  getStyledComponentNode = (fileName: string,pos:number)=>{
     let program = this.languageService.getProgram()
     let sourceFile = program?.getSourceFile(fileName);
     if(!sourceFile){
@@ -55,7 +54,7 @@ export default class CssSelectorParser{
     if(node.kind != ts.SyntaxKind.StringLiteral){
       return
     }
-    let stringNode = node
+    let stringNode = node as ts.StringLiteral
 
     let styledNode = []
     node = node.parent
@@ -67,7 +66,7 @@ export default class CssSelectorParser{
       })
       let result = stringNodeReferences.map(referenceNode=>{
         return findStyledNode(referenceNode!)
-      }).filter(item => item)
+      }).filter(item => item) as StyledComponentNode[][]
       return unique(flatten(result),(pre,current)=>{
         return pre.tsNode == current.tsNode
       })
@@ -78,7 +77,7 @@ export default class CssSelectorParser{
         return findStyledNode(node.parent)
       }
     }
-    const workJsxOpeningElement = (node:ts.JsxOpeningElement):CssStyledNode[] | undefined=>{
+    const workJsxOpeningElement = (node:ts.JsxOpeningElement):StyledComponentNode[] | undefined=>{
       let identifier = this.tsHelp.getJsxOpeningElementIdentier(node);
       if(identifier){
         let definitions = this.tsHelp.getDefinition(fileName,identifier.pos);
@@ -108,7 +107,7 @@ export default class CssSelectorParser{
     const workJsxElement = (node: ts.JsxElement)=>{
       return findStyledNode(node)
     }
-    const findStyledNode = (node:ts.Node):CssStyledNode[]|undefined=>{
+    const findStyledNode = (node:ts.Node):StyledComponentNode[]|undefined=>{
       var aa = sourceFile;var a1  = this;
       console.log(ts.SyntaxKind[node.kind],node.getFullText());
       //CallExpression getAge()
@@ -211,14 +210,19 @@ export default class CssSelectorParser{
     return flattenNodes(node)
 
   }
-  getSelectors = (selectors:CssStyledNode[],sourceSelector:ts.Node)=>{
-    console.log(selectors);
+  getSelectors = (styledComponentNode:StyledComponentNode[],sourceSelector:ts.StringLiteral)=>{
+    console.log(styledComponentNode);
     
-    let aa = selectors.filter(selector=> {
-      if(selector.type == 'styledElement'){
-        if(selector.scssText.match(sourceSelector.getText())){
-          let parseCss = this.parseCssSelector(selector.tsNode as ts.JsxElement)
-          
+    let node = styledComponentNode
+
+
+    let aa = styledComponentNode.filter(node=> {
+      if(node.type == 'styledElement'){
+        if(node.scssText.match(sourceSelector.text)){
+          let parseCssSelectors = this.parseCssSelector(node.tsNode as ts.JsxElement)
+          parseCssSelectors.forEach(cssSelector =>{
+
+          })
         }
       }
 

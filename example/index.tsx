@@ -12,6 +12,11 @@ var User = styled.div`
 var roots = {
   aaa:'aaa',
 }
+const getAge = ()=>{
+  let   aa = 'a123'
+  let bb = aa ? 'aa' : 'b123'
+  return a ? aa :      bb      
+}
 var Member = styled.div`
   .user,.user1 div.member{
     color: blue;
@@ -33,11 +38,7 @@ var Member = styled.div`
   }
 `
 var a = true
-const getAge = ()=>{
-  let   aa = 'a123'
-  let bb = aa ? 'aa' : 'b123'
-  return a ? aa :      bb      
-}
+
 var ShowMemeber = (props:any)=>{
 
 

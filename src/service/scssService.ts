@@ -60,11 +60,11 @@ class NodeSelectorGenerator{
   findNodes =(simpleSelectorTarget:Node) =>{
     return this.getNode(simpleSelectorTarget)
   }
-  getCurrentNodes = ():Node| Node[]=>{
+  getCurrentNodes = ():Node[]=>{
     let simpleSelectors = this.selector.getChildren()
     let currentSimpleSelector = simpleSelectors[this.currentSimpleSelectorIndex];
     if(currentSimpleSelector){
-      return currentSimpleSelector
+      return [currentSimpleSelector]
     }else{
       let nodes = this.declarationGenerators.map(gen => gen.getCurrentNodes())
       let _nodes= flatten(nodes.filter(item => item))
