@@ -6,7 +6,7 @@ type Ts  = typeof import("typescript")
 import * as ts from 'typescript'
 import TsHelp from '../service/tsHelp'
 import { findResult, flatten, unique } from '../utils/utils'
-import extractCssSelectorWorkWrap, { JsxElementNode } from './extractCssSelector'
+import extractCssSelectorWorkWrap, { JsxElementNode,CandidateTextNode } from './extractCssSelector'
 
 
 type StyledComponentNode = {
@@ -211,18 +211,46 @@ export default class CssSelectorParser{
 
   }
   getSelectors = (styledComponentNode:StyledComponentNode[],sourceSelector:ts.StringLiteral)=>{
+    let isElement = (node:JsxElementNode)=>{
+      return node.type == 'styledElement' || node.type == 'intrinsicElements'
+    }
     console.log(styledComponentNode);
-    
-    let node = styledComponentNode
+    const get1 = (parseCssSelectors)=>{
+      let result:CandidateTextNode[] = []
+          const matchNode = (parseCssSelectors:JsxElementNode[])=>{
+            parseCssSelectors.forEach(cssSelector =>{
+              if(cssSelector.type == "styledElement" || cssSelector.type == "intrinsicElements"){
+                let { selectors = [],children = []} = cssSelector
+                selectors.forEach(selector=>{
+                  let {type, selectorType, children = []} = selector
+                  console.log(selector);
+                  children.forEach(selectorNode=>{
+                    console.log(selectorNode.text || selectorNode.tsNode.getText());
+                    console.log(sourceSelector.text);
+                    const isSame = (selectorNode,sourceSelector)=>{
+                      return selectorNode.tsNode == sourceSelector
+                    }
+                    if(isSame(selectorNode,sourceSelector)){
+                      console.log(selectorNode);
+                      result.push(selectorNode)
+                    }
+                  })
+                })
+                return matchNode(children)
+              }
+            })
+          }
+          matchNode(parseCssSelectors)
+    }
+
 
 
     let aa = styledComponentNode.filter(node=> {
       if(node.type == 'styledElement'){
         if(node.scssText.match(sourceSelector.text)){
-          let parseCssSelectors = this.parseCssSelector(node.tsNode as ts.JsxElement)
-          parseCssSelectors.forEach(cssSelector =>{
-
-          })
+          // let parseCssSelectors = this.parseCssSelector(node.tsNode as ts.JsxElement)
+          let parseCssSelectors = this.parseCssSelector(node.parent[0].tsNode as ts.JsxElement);
+          get1(parseCssSelectors)
         }
       }
 

@@ -11,22 +11,33 @@ import { containerNames ,cssSelectors} from './types'
 type JsxElementNodeCommonDefault = {
   children?: JsxElementNode[],
   tsNode: ts.Node,
-  tag?:any
 }
-type CandidateTextNode = {
+export type CandidateTextNode =  JsxElementNodeCommonDefault & {
   type: 'textNode',
-  text: string
+  text: string,
+  parent?: JsxElementSelector
 }
 type JsxElementSelector = {
   type: "selectorNode"
-  selectorType: keyof typeof cssSelectors
+  selectorType: keyof typeof cssSelectors,
+  children?: CandidateTextNode[],
+  tsNode: ts.Node,
+  parent?: StyledElement,
+}
+type TaggedTemplateExpression =  JsxElementNodeCommonDefault &  {
+  type: 'TaggedTemplateExpression',
+  tag: ts.LeftHandSideExpression,
+  tagName: string,
+  parent?
 }
 
-
-export type JsxElementNode =  JsxElementNodeCommonDefault & (CandidateTextNode | JsxElementSelector | {
+type StyledElement = JsxElementNodeCommonDefault & {
   type: "styledElement" | 'intrinsicElements'
   selectors: JsxElementSelector[],
-})
+  parent?: StyledElement
+}
+
+export type JsxElementNode = CandidateTextNode | TaggedTemplateExpression | StyledElement
 
 
 
@@ -65,13 +76,13 @@ export default function extractCssSelectorWorkWrap ({ node,languageService, tsHe
       whenTrue
     ].filter(item => item);
     let references = nodes.map(node=>{  
-      return extractCssSelectorWork(node)
+      return extractCssSelectorWork(node) || []
       // return (languageService.getDefinitionAtPosition(fileName,node.pos+1)||[]).filter(reference =>  reference)
     })
 
     return  flatten(references)
   }
-  function extractJsxElement(node: ts.JsxElement):JsxElementNode{
+  function extractJsxElement(node: ts.JsxElement):StyledElement{
     console.log(languageService);
     let sourceFile = node.getSourceFile()
     let { attributes } = node.openingElement;
@@ -104,7 +115,9 @@ export default function extractCssSelectorWorkWrap ({ node,languageService, tsHe
     }) || []
 
     // let customComponentRenderChildrenwithoutStyled = customComponentDefine.map(extractCssSelectorWork).filter(node => {
-    let _customComponentRenderChildren = customComponentDefine.map(extractCssSelectorWork)
+    let _customComponentRenderChildren = customComponentDefine.map((node)=>{
+      return extractCssSelectorWork(node) || []
+    })
     let customComponentRenderChildren = flatten(_customComponentRenderChildren,{deep:true});
     const isFunctionComponentElementChildren = (node)=>{
       return node && node.tsNode.kind != ts.SyntaxKind.TaggedTemplateExpression
@@ -123,8 +136,32 @@ export default function extractCssSelectorWorkWrap ({ node,languageService, tsHe
 
     console.log(node.getFullText(),'2222');
     
+    const getSelectors = (node: ts.JsxAttribute): JsxElementSelector[]=>{
+      let selectorAttributions:any[] = ['className','id']
+      let escapedTextSelector = node.name.escapedText  as string
+      if(selectorAttributions.includes(node.name.escapedText)){
+        let resultInit = extractCssSelectorWork(node.initializer) as CandidateTextNode[]
+        let selectors = resultInit || []
+        let currentNode:JsxElementSelector =  {
+          type: "selectorNode",
+          tsNode: node.initializer as ts.Node,
+          selectorType: cssSelectors[escapedTextSelector],
+          children: [],
+        }
+        selectors = selectors.map(selector=>{
+          selector.parent = currentNode
+          return selector
+        })
+        currentNode.children = selectors
+        return  [
+          currentNode
+        ]
+        
+      }
+      return []
+    }
 
-    let selectors = ts.forEachChild(attributes,extractCssSelectorWork,extractCssSelectorWorkNodes) || []
+    let selectors = ts.forEachChild(attributes,(node)=>getSelectors(node as ts.JsxAttribute),(nodes)=>flatten(nodes.map((node)=>getSelectors(node as ts.JsxAttribute)))) || []
     let children =  ts.forEachChild(node,extractCssSelectorWork,extractCssSelectorWorkNodes) || []
     children = children.filter(child => child)
     // children = flatten(children,{deep: true})
@@ -149,54 +186,62 @@ export default function extractCssSelectorWorkWrap ({ node,languageService, tsHe
 
       }
       console.log(identiferNode);
-      
     }
-    return {
+    const currentNode:StyledElement = {
       type: isIntrinsicElement ? "intrinsicElements" : "styledElement",
       // selectors: flatten(selectors,{deep:true}),
       selectors: selectors as JsxElementSelector[],
       children: [...children,...customComponentRenderChildrenWithoutStyled],
       tsNode:node,
     }
+    currentNode.children = (currentNode.children || []).map(child=>{
+      child.parent = currentNode
+      return child
+    })
+    currentNode.selectors = currentNode.selectors.map(selector=>{
+      selector.parent = currentNode
+      return selector
+    })
+    return currentNode 
   }
-  function extractJsxAttribution(node: ts.JsxAttribute):JsxElementNode[]{
-    let selectorAttributions:any[] = ['className','id']
-    let escapedTextSelector = node.name.escapedText  as string
-    if(selectorAttributions.includes(node.name.escapedText)){
-      let resultInit = extractCssSelectorWork(node.initializer)
-      // let selectors = flatten(resultInit,{deep:true}) || []
-      let selectors = resultInit
-      // if(!Array.isArray(selectors)){
-      //   selectors = [selectors] 
-      // }
-      return [
-        {
-          type: "selectorNode",
-          tsNode: node.initializer as ts.Node,
-          selectorType: cssSelectors[escapedTextSelector],
-          children: selectors
-        }
-      ]
-      // return selectors.map(selector=>{
-      //   return {
-      //     // type: cssSelectors[escapedTextSelector],
-      //     type: "selector",
-      //     tsNode: selector.tsNode,
-      //   }
-      // })
-    }
-    return []
-  }
+  // function extractJsxAttribution(node: ts.JsxAttribute):JsxElementNode[]{
+  //   let selectorAttributions:any[] = ['className','id']
+  //   let escapedTextSelector = node.name.escapedText  as string
+  //   if(selectorAttributions.includes(node.name.escapedText)){
+  //     let resultInit = extractCssSelectorWork(node.initializer)
+  //     // let selectors = flatten(resultInit,{deep:true}) || []
+  //     let selectors = resultInit
+  //     // if(!Array.isArray(selectors)){
+  //     //   selectors = [selectors] 
+  //     // }
+  //     return [
+  //       {
+  //         type: "selectorNode",
+  //         tsNode: node.initializer as ts.Node,
+  //         selectorType: cssSelectors[escapedTextSelector],
+  //         children: selectors
+  //       }
+  //     ]
+  //     // return selectors.map(selector=>{
+  //     //   return {
+  //     //     // type: cssSelectors[escapedTextSelector],
+  //     //     type: "selector",
+  //     //     tsNode: selector.tsNode,
+  //     //   }
+  //     // })
+  //   }
+  //   return []
+  // }
   function extractJsxExpress(node: ts.JsxExpression){
     return extractCssSelectorWork(node.expression)
   }
   function extractTemplateExpression(node: ts.TemplateExpression):JsxElementNode[]{
     let { head ,templateSpans} = node
-    let templateSpansNodes = flatten(templateSpans.map(extractCssSelectorWork))
+    let templateSpansNodes = flatten(templateSpans.map((node)=>extractCssSelectorWork(node) || []))
     if(head.text.trim()){
       templateSpansNodes.unshift({
         type: "textNode",
-        text: head.getText(),
+        text: head.text.trim(),
         tsNode: head
       })
     }
@@ -204,12 +249,12 @@ export default function extractCssSelectorWorkWrap ({ node,languageService, tsHe
   }
   function extractTemplateSpan(node: ts.TemplateSpan){
     let { literal ,expression} = node
-    let templateSpanNode = extractCssSelectorWork(expression)
+    let templateSpanNode = extractCssSelectorWork(expression) || []
     if(literal.text.trim()){
       // templateSpanNode.push(literal)
       templateSpanNode.push({
         type: "textNode",
-        text: literal.getText(),
+        text: literal.text.trim(),
         tsNode: literal,
       })
     }
@@ -220,7 +265,7 @@ export default function extractCssSelectorWorkWrap ({ node,languageService, tsHe
     let validNodes = definitionNodes.filter((refNode)=>{
       return refNode
     })
-    let result = validNodes.map(extractCssSelectorWork)
+    let result = validNodes.map((node)=>extractCssSelectorWork(node) || [])
     return  flatten(result)
     let nodes = validNodes.map(node =>{
       // return tsServer.findNodeByRange(node)
@@ -246,7 +291,7 @@ export default function extractCssSelectorWorkWrap ({ node,languageService, tsHe
     return [
       {
         type: "textNode",
-        text: node.getText(),
+        text: text.trim(),
         tsNode: node,
       }
     ]
@@ -254,11 +299,13 @@ export default function extractCssSelectorWorkWrap ({ node,languageService, tsHe
   function extractTaggedTemplateExpression(node: ts.TaggedTemplateExpression):JsxElementNode{
     const  { tag,template } = node
     console.log(template);
+    const _tag = tag as  ts.PropertyAccessExpression
+    let tagName = _tag.name.escapedText.toString()
     //todo  提取css对象 关联上同级className
     return {
-      type: "textNode",
-      text: node.getText(),
-      tag,
+      type: "TaggedTemplateExpression",
+      tagName: tagName,
+      tag: tag,
       tsNode: node,
     }
     // extractCssSelectorWork(node.expression)
@@ -271,7 +318,7 @@ export default function extractCssSelectorWorkWrap ({ node,languageService, tsHe
 
   }
   
-  function extractCssSelectorWork(node: ts.Node| undefined):JsxElementNode[]{
+  function extractCssSelectorWork(node: ts.Node| undefined):JsxElementNode[]|undefined{
     if(!node){
       return []
     }
@@ -289,8 +336,8 @@ export default function extractCssSelectorWorkWrap ({ node,languageService, tsHe
         return extractConditionalExpression(node as ts.ConditionalExpression)
       case ts.SyntaxKind.JsxElement:
         return [extractJsxElement(node as ts.JsxElement)];
-      case ts.SyntaxKind.JsxAttribute:
-        return extractJsxAttribution(node as ts.JsxAttribute);
+      // case ts.SyntaxKind.JsxAttribute:
+      //   return extractJsxAttribution(node as ts.JsxAttribute);
       case ts.SyntaxKind.JsxExpression:
         return extractJsxExpress(node as ts.JsxExpression)
       case ts.SyntaxKind.TemplateExpression:
@@ -310,12 +357,12 @@ export default function extractCssSelectorWorkWrap ({ node,languageService, tsHe
       case ts.SyntaxKind.TaggedTemplateExpression:
         return [extractTaggedTemplateExpression(node as ts.TaggedTemplateExpression)]
       default:
-        return []
+        return undefined
     }
   }
   function extractCssSelectorWorkNodes(nodes: ts.NodeArray<ts.Node>){
-    return flatten(nodes.map(extractCssSelectorWork))
+    return flatten(nodes.map((node)=>extractCssSelectorWork(node) || []))
   }
 
-  return extractCssSelectorWork(node)
+  return extractCssSelectorWork(node) || []
 }
