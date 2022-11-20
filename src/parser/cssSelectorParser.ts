@@ -4,6 +4,7 @@
 type Ts  = typeof import("typescript")
 // import  from 'typescript/lib/tsserverlibrary'
 import * as ts from 'typescript'
+import { getScssService } from '../service/cssService'
 import TsHelp from '../service/tsHelp'
 import { findResult, flatten, unique } from '../utils/utils'
 import extractCssSelectorWorkWrap, { JsxElementNode,CandidateTextNode } from './extractCssSelector'
@@ -215,47 +216,61 @@ export default class CssSelectorParser{
       return node.type == 'styledElement' || node.type == 'intrinsicElements'
     }
     console.log(styledComponentNode);
-    const get1 = (parseCssSelectors)=>{
-      let result:CandidateTextNode[] = []
-          const matchNode = (parseCssSelectors:JsxElementNode[])=>{
-            parseCssSelectors.forEach(cssSelector =>{
-              if(cssSelector.type == "styledElement" || cssSelector.type == "intrinsicElements"){
-                let { selectors = [],children = []} = cssSelector
-                selectors.forEach(selector=>{
-                  let {type, selectorType, children = []} = selector
-                  console.log(selector);
-                  children.forEach(selectorNode=>{
-                    console.log(selectorNode.text || selectorNode.tsNode.getText());
-                    console.log(sourceSelector.text);
-                    const isSame = (selectorNode,sourceSelector)=>{
-                      return selectorNode.tsNode == sourceSelector
-                    }
-                    if(isSame(selectorNode,sourceSelector)){
-                      console.log(selectorNode);
-                      result.push(selectorNode)
-                    }
-                  })
-                })
-                return matchNode(children)
-              }
+    const findCandidateSelector = (parseCssSelectors):CandidateTextNode[]  => {
+      let result: CandidateTextNode[] = []
+      const matchNode = (parseCssSelectors: JsxElementNode[]) => {
+        parseCssSelectors.forEach(cssSelector => {
+          if (cssSelector.type == "styledElement" || cssSelector.type == "intrinsicElements") {
+            let { selectors = [], children = [] } = cssSelector
+            selectors.forEach(selector => {
+              let { type, selectorType, children = [] } = selector
+              console.log(selector);
+              children.forEach(selectorNode => {
+                console.log(selectorNode.text || selectorNode.tsNode.getText());
+                console.log(sourceSelector.text);
+                const isSame = (selectorNode, sourceSelector) => {
+                  return selectorNode.tsNode == sourceSelector
+                }
+                if (isSame(selectorNode, sourceSelector)) {
+                  console.log(selectorNode);
+                  result.push(selectorNode)
+                }
+              })
             })
+            return matchNode(children)
           }
-          matchNode(parseCssSelectors)
+        })
+      }
+      matchNode(parseCssSelectors)
+      return result
     }
 
+    const getCandidateSelector = (node:StyledComponentNode)=>{
+      let result:CandidateTextNode[]  = []
 
-
-    let aa = styledComponentNode.filter(node=> {
       if(node.type == 'styledElement'){
         if(node.scssText.match(sourceSelector.text)){
           // let parseCssSelectors = this.parseCssSelector(node.tsNode as ts.JsxElement)
-          let parseCssSelectors = this.parseCssSelector(node.parent[0].tsNode as ts.JsxElement);
-          get1(parseCssSelectors)
+          let parseCssSelectors = this.parseCssSelector(node.tsNode as ts.JsxElement);
+          let styleSheet = getScssService().generateStyleSheetByJsxElementNode(parseCssSelectors[0])
+          let candidateSelectors = findCandidateSelector(parseCssSelectors)
+          result = result.concat(candidateSelectors)
         }
       }
+      if(node.parent && Array.isArray(node.parent)){
+        node.parent.forEach((node)=>{
+          let candidateSelectors =  getCandidateSelector(node)
+          result = result.concat(candidateSelectors)
+        })
+      }
+      return result
+    }
 
-    })
 
+    let aa = flatten(styledComponentNode.map(getCandidateSelector))
+
+
+    getScssService
     return aa
 
   }

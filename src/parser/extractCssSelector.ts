@@ -17,7 +17,7 @@ export type CandidateTextNode =  JsxElementNodeCommonDefault & {
   text: string,
   parent?: JsxElementSelector
 }
-type JsxElementSelector = {
+export type JsxElementSelector = {
   type: "selectorNode"
   selectorType: keyof typeof cssSelectors,
   children?: CandidateTextNode[],
@@ -175,12 +175,13 @@ export default function extractCssSelectorWorkWrap ({ node,languageService, tsHe
     }else{
       if(isStyledComponentElement){
         let tsNode = customComponentStyled[0].tsNode as ts.TaggedTemplateExpression 
+        let tag = tsNode.tag as any
         selectors.unshift({
           type: 'selectorNode',
           selectorType: 'element',
           // :  cssSelectors.element,
           // tsNode: tsNode.tag.name,
-          tsNode: tsNode.tag,
+          tsNode: tag.name,
         })
       }else{
 

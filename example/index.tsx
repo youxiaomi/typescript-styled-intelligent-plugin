@@ -14,7 +14,7 @@ var roots = {
 }
 const getAge = ()=>{
   let   aa = 'a123'
-  let bb = aa ? 'aa' : 'b123'
+  let bb = aa ? 'user1' : 'b123'
   return a ? aa :      bb      
 }
 var Member = styled.div`
@@ -40,6 +40,7 @@ var Member = styled.div`
 var a = true
 
 var ShowMemeber = (props:any)=>{
+
 
 
   return <div>

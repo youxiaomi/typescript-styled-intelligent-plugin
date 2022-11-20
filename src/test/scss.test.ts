@@ -2,7 +2,7 @@
 
 import { describe ,suite} from "mocha"
 import * as assert from "assert"
-import { getScssService } from "../service/scssService"
+import { getScssService } from "../service/cssService"
 
 
 
@@ -101,7 +101,7 @@ const scssService = getScssService();
 let styleSheet = scssService.getScssStyleSheet(testText)
 let styleSheet2 = scssService.getScssStyleSheet(testText3)
 
-let nodes= scssService.getClassNameNode(styleSheet);
+let nodes= scssService.getCssSelectorNode(styleSheet);
 
 let node = nodes.children[0].children[1].children[0]
 console.log(node);

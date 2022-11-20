@@ -1,9 +1,11 @@
 
 
 import { getSCSSLanguageService ,TextDocument,} from 'vscode-css-languageservice'
+import * as ts from 'typescript'
 import { NodeType,Node}  from 'vscode-css-languageservice/lib/umd/parser/cssNodes'
 import * as Nodes from 'vscode-css-languageservice/lib/umd/parser/cssNodes'
-import { flatten } from '../utils/utils'
+import { flatten, omitUndefined } from '../utils/utils'
+import { JsxElementNode, JsxElementSelector,CandidateTextNode } from '../parser/extractCssSelector'
 
 
 const scssLanguageService = getSCSSLanguageService()
@@ -177,7 +179,7 @@ class ScssService {
 
     let targetGenerator = new NodeGenerator(this.getRootRuleset(targetStyleSheet));
     let sourceRuleSet = this.getRootRuleset(sourceStyleSheet);
-    const getNodes = (targetGenerator:NodeGenerator,sourceRuleSet:Node)=>{
+    const getNodes = (targetGenerator:NodeGenerator, sourceRuleSet:Node)=>{
       let [ undefinedNode, declartionNode ]  = sourceRuleSet.getChildren()
       let selectors = undefinedNode.getChildren()
       let declarations = declartionNode.getChildren()
@@ -215,7 +217,7 @@ class ScssService {
     let result = chidlren.map(cbNodes).filter(item => item) as  Node[]
     return result.length ? result : undefined
   }
-  getClassNameNode(node: Node){
+  getCssSelectorNode(node: Node){
     function extractSelector(node: Nodes.Selector){
       let chidlren = node.getChildren()
       return chidlren.map(extractStyleSheetSelectorWork)
@@ -327,6 +329,80 @@ class ScssService {
     let classNameNodes = iterationNode(node)
     console.log(classNameNodes)
     return classNameNodes
+  }
+  generateStyleSheetByJsxElementNode = (node:JsxElementNode,sourceSelectorNode?: ts.Node)=>{
+    /**
+     *  root:{
+     *    .a{
+     *        .b .c{
+     *          
+     *        }
+     *    }
+     *  }
+     */
+    const styleSheet = ''
+    const generateClassName = (selector:CandidateTextNode)=>{
+      let tsNode = selector.tsNode as ts.StringLiteral
+
+      return `.${tsNode.text.trim()}`
+    }
+    const generateId = (selector:CandidateTextNode)=>{
+      let tsNode = selector.tsNode as ts.StringLiteral
+
+      return `#${tsNode.text.trim()}`
+    }
+    const generateElement = (selector:JsxElementSelector)=>{
+      let tsNode = selector.tsNode as ts.Identifier
+
+      return `${tsNode.text.trim()}`
+    }
+    const generateSelectorText = (selector:JsxElementSelector)=>{
+      console.log(ts.SyntaxKind[selector.tsNode.kind]);
+          
+      if(selector.selectorType == 'className'){
+        return (selector.children || []).map(generateClassName)
+      }
+      if(selector.selectorType == 'id'){
+        return (selector.children || []).map(generateId)
+      }
+      if(selector.selectorType == "element"){
+        return [generateElement(selector)]
+      }
+      return []
+    }
+    const generateSelectorNode = (node:JsxElementNode,sourceSelectorNode?: ts.Node) =>{
+      if(node.type == 'styledElement' || node.type == 'intrinsicElements'){
+        const { type ,children = []}  = node
+        let selectors = node.selectors
+        if(sourceSelectorNode){
+          let _selectorsResult = node.selectors.map(selector=>{
+            if(selector.selectorType == 'className' || selector.selectorType == 'id'){
+              let child= (selector.children || []).find(item => item.tsNode == sourceSelectorNode);
+              let _selector = {...selector}
+              if(child){
+                _selector.children = [child]
+                return _selector
+              }
+            }
+            if(selector.tsNode == sourceSelectorNode){
+              return selector
+            }
+          })
+          let _selectors = omitUndefined(_selectorsResult)
+          if(_selectors.length){
+            selectors = _selectors
+          }
+          //判断选择器是否存在
+        }
+
+        let selectorResults = selectors.map(generateSelectorText).filter(item => item)
+        let selectorStrings = flatten(selectorResults).join(',')
+        let childrenSelectorResults = children.map((node)=>generateSelectorNode(node,sourceSelectorNode)).filter(item=>item)
+        let childrenSelectors = childrenSelectorResults.join(``)
+        return `${selectorStrings}{${childrenSelectors}}`
+      }
+    }
+    return generateSelectorNode(node,sourceSelectorNode)
   }
 }
 

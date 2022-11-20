@@ -70,4 +70,4 @@ const cssSelectorParser =  new CssSelectorParser(ts,languageService,tsHelp)
 // let res = cssSelectorParser.parseCssSelector(referenceNode[0] as ts.JsxElement)
 // console.log(res);
 
-cssSelectorParser.getStyledComponentNode(testFiles.fileName,testFiles?.getFullText().indexOf('b123'))
+cssSelectorParser.getStyledComponentNode(testFiles.fileName,testFiles?.getFullText().indexOf('user1'))

@@ -12,6 +12,6 @@ export const containerNames = {
 
 export const  cssSelectors = {
   id:'id',
-  className:'class',
+  className:'className',
   element:'element'
 }
