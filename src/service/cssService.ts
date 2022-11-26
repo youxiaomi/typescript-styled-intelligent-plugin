@@ -2,7 +2,7 @@
 
 import { getSCSSLanguageService ,TextDocument,} from 'vscode-css-languageservice'
 import * as ts from 'typescript'
-import { NodeType,Node}  from 'vscode-css-languageservice/lib/umd/parser/cssNodes'
+import { NodeType,Node,RuleSet}  from 'vscode-css-languageservice/lib/umd/parser/cssNodes'
 import * as Nodes from 'vscode-css-languageservice/lib/umd/parser/cssNodes'
 import { flatten, omitUndefined } from '../utils/utils'
 import { JsxElementNode, JsxElementSelector,CandidateTextNode } from '../parser/extractCssSelector'
@@ -177,25 +177,27 @@ class ScssService {
   }
   findSelectorTreeBySelector(targetStyleSheet:Node, sourceStyleSheet:Node){
 
+    const getRulesetsOfDeclartions = (declarations:Node[])=>{
+      return declarations.filter(declartion => declartion.type == NodeType.Ruleset) as RuleSet[]
+    }
     let targetGenerator = new NodeGenerator(this.getRootRuleset(targetStyleSheet));
     let sourceRuleSet = this.getRootRuleset(sourceStyleSheet);
     const getNodes = (targetGenerator:NodeGenerator, sourceRuleSet:Node)=>{
       let [ undefinedNode, declartionNode ]  = sourceRuleSet.getChildren()
-      let selectors = undefinedNode.getChildren()
-      let declarations = declartionNode.getChildren()
-      declarations = declarations.filter(declartion => declartion.type == NodeType.Ruleset)
-      const recursiveSelector = (targetGeneratorClone,selector:Node)=>{
+      let sourceSelectors = undefinedNode.getChildren()
+      let declarationRuleSets = getRulesetsOfDeclartions(declartionNode.getChildren())
+      const recursiveSelector = (targetGeneratorClone:NodeGenerator,selector:Node)=>{
         let simpleSelectors = selector.getChildren();
         return !simpleSelectors.find(simpleSelector => targetGeneratorClone.findNodes(simpleSelector).length == 0)
       }
-      let _selectors =  selectors.map(selector=>{
+      let _selectors =  sourceSelectors.map(selector=>{
         let targetGeneratorClone = targetGenerator.clone()
         let hasSelector = recursiveSelector(targetGeneratorClone,selector);
         if(!hasSelector){
           return undefined
         }
-        if(declarations.length){
-          let result = declarations.map(ruleSet=>{
+        if(declarationRuleSets.length){
+          let result = declarationRuleSets.map(ruleSet=>{
             return getNodes(targetGeneratorClone.clone(),ruleSet)
           }).filter(item => item)
           return flatten(result)
@@ -340,11 +342,10 @@ class ScssService {
      *    }
      *  }
      */
-    const styleSheet = ''
     const generateClassName = (selector:CandidateTextNode)=>{
       let tsNode = selector.tsNode as ts.StringLiteral
 
-      return `.${tsNode.text.trim()}`
+      return `.${selector.text || tsNode.text.trim()}`
     }
     const generateId = (selector:CandidateTextNode)=>{
       let tsNode = selector.tsNode as ts.StringLiteral
@@ -377,7 +378,7 @@ class ScssService {
         if(sourceSelectorNode){
           let _selectorsResult = node.selectors.map(selector=>{
             if(selector.selectorType == 'className' || selector.selectorType == 'id'){
-              let child= (selector.children || []).find(item => item.tsNode == sourceSelectorNode);
+              let child = (selector.children || []).find(item => item.tsNode == sourceSelectorNode);
               let _selector = {...selector}
               if(child){
                 _selector.children = [child]
@@ -390,10 +391,14 @@ class ScssService {
           })
           let _selectors = omitUndefined(_selectorsResult)
           if(_selectors.length){
-            selectors = _selectors
+
+            let selectorResults = _selectors.map(generateSelectorText).filter(item => item)
+            let selectorStrings = flatten(selectorResults).join(',')
+            return `${selectorStrings}{}`
+            // selectors = _selectors
           }
-          //判断选择器是否存在
         }
+        // 多class可以并集，生成  .user.age
 
         let selectorResults = selectors.map(generateSelectorText).filter(item => item)
         let selectorStrings = flatten(selectorResults).join(',')

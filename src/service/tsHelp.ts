@@ -5,7 +5,7 @@ type Ts  = typeof import("typescript")
 // import  from 'typescript/lib/tsserverlibrary'
 import * as ts from 'typescript'
 import { containerNames } from '../parser/types'
-import { unique } from '../utils/utils'
+import { omitUndefined, unique } from '../utils/utils'
 
 export default class TsHelp {
   constructor(typescript: Ts,languageService: ts.LanguageService){
@@ -83,7 +83,7 @@ export default class TsHelp {
   getDefinition(fileName,pos:number){
     return  this.languageService.getDefinitionAtPosition(fileName,pos) || []
   }
-  getDefinitionNodes(fileName,pos:number){
+  getDefinitionNodes(fileName:string,pos:number){
     let definitions = this.getDefinition(fileName,pos)
     let program = this.languageService.getProgram()
     return definitions.map(definition =>{
@@ -99,6 +99,13 @@ export default class TsHelp {
         return undefined
       }
     })
+  }
+  getDefinitionNodesByNode = (node:ts.Node)=>{
+    let sourceFile = node.getSourceFile();
+    return omitUndefined(this.getDefinitionNodes(sourceFile.fileName,node.getStart()))
+  }
+  getDefinitionLastNodeByIdentiferNode = (node:ts.Node)=>{
+    return this.getDefinitionNodesByNode(node)[0]
   }
   isCustomJsxElement(node){
     // return node && node.containerName != 'JSX.IntrinsicElements'
@@ -123,7 +130,8 @@ export default class TsHelp {
       declarations.forEach(declaration=>{
         if(declaration.initializer && declaration.initializer.kind == ts.SyntaxKind.TaggedTemplateExpression){
           let node = declaration.initializer  as ts.TaggedTemplateExpression
-          scssText = node.template.getFullText();
+          scssText = node.template.getText();
+          scssText = scssText.slice(1,-1)
           TaggedTemplateNode = declaration.initializer
         }
       })

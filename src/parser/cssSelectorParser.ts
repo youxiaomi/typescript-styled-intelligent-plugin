@@ -6,7 +6,7 @@ type Ts  = typeof import("typescript")
 import * as ts from 'typescript'
 import { getScssService } from '../service/cssService'
 import TsHelp from '../service/tsHelp'
-import { findResult, flatten, unique } from '../utils/utils'
+import { findResult, flatten, omitUndefined, unique } from '../utils/utils'
 import extractCssSelectorWorkWrap, { JsxElementNode,CandidateTextNode } from './extractCssSelector'
 
 
@@ -246,15 +246,28 @@ export default class CssSelectorParser{
     }
 
     const getCandidateSelector = (node:StyledComponentNode)=>{
-      let result:CandidateTextNode[]  = []
+      let result1:CandidateTextNode[]  = []
+      let result: any[] = []
 
       if(node.type == 'styledElement'){
         if(node.scssText.match(sourceSelector.text)){
           // let parseCssSelectors = this.parseCssSelector(node.tsNode as ts.JsxElement)
           let parseCssSelectors = this.parseCssSelector(node.tsNode as ts.JsxElement);
-          let styleSheet = getScssService().generateStyleSheetByJsxElementNode(parseCssSelectors[0])
-          let candidateSelectors = findCandidateSelector(parseCssSelectors)
-          result = result.concat(candidateSelectors)
+          let cssService = getScssService()
+          let cssText = cssService.generateStyleSheetByJsxElementNode(parseCssSelectors[0],sourceSelector)
+          let styleSheet = cssService.getScssStyleSheet(cssText)
+          let targetCssText = parseCssSelectors[0]
+          let tsNode = parseCssSelectors[0].tsNode as ts.JsxElement
+          let identiferName = this.tsHelp.getJsxOpeningElementIdentier(tsNode.openingElement)
+          let styledDefintions =  this.tsHelp.getDefinitionLastNodeByIdentiferNode(identiferName!)
+          let { scssText = '' } = this.tsHelp.getStyledTemplateScss(styledDefintions) || {}
+
+          let currentStyledComponentStyleSheet = cssService.getScssStyleSheet(scssText)
+          let cssNodes =  cssService.findSelectorTreeBySelector(currentStyledComponentStyleSheet,styleSheet);
+          console.log(cssNodes);
+          result = result.concat(cssNodes)
+          // let candidateSelectors = findCandidateSelector(parseCssSelectors)
+          // result = result.concat(candidateSelectors)
         }
       }
       if(node.parent && Array.isArray(node.parent)){
@@ -268,7 +281,8 @@ export default class CssSelectorParser{
 
 
     let aa = flatten(styledComponentNode.map(getCandidateSelector))
-
+    //候选selector
+    
 
     getScssService
     return aa

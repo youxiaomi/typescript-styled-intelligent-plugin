@@ -239,11 +239,15 @@ export default function extractCssSelectorWorkWrap ({ node,languageService, tsHe
   function extractTemplateExpression(node: ts.TemplateExpression):JsxElementNode[]{
     let { head ,templateSpans} = node
     let templateSpansNodes = flatten(templateSpans.map((node)=>extractCssSelectorWork(node) || []))
-    if(head.text.trim()){
-      templateSpansNodes.unshift({
-        type: "textNode",
-        text: head.text.trim(),
-        tsNode: head
+    let headText = head.text.trim()
+    let classNames = headText.split(' ').filter(item => item)
+    if(classNames.length){
+      classNames.forEach(className=>{
+        templateSpansNodes.unshift({
+          type: "textNode",
+          text: className,
+          tsNode: head
+        })
       })
     }
     return templateSpansNodes

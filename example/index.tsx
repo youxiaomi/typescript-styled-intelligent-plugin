@@ -4,23 +4,34 @@ import styled from 'styled-components'
 
 
 var bb = 123
-
-var User = styled.div`
-  a234567890abced
-`
-
-var roots = {
-  aaa:'aaa',
-}
 const getAge = ()=>{
   let   aa = 'a123'
   let bb = aa ? 'user1' : 'b123'
   return a ? aa :      bb      
 }
+var User = styled.div`
+  #testid{
+    .user1{
+
+    }
+  }
+  .member{
+    .user1{
+
+    }
+  }
+
+`
+
+var roots = {
+  aaa:'aaa',
+}
+
+
 var Member = styled.div`
-  .user,.user1 div.member{
+  .user,.bbbb,.bbb div.member{
     color: blue;
-    .age{
+    .user1{
       width:120px
     }
   }
@@ -37,6 +48,7 @@ var Member = styled.div`
     height: 120px;
   }
 `
+
 var a = true
 
 var ShowMemeber = (props:any)=>{
@@ -44,8 +56,8 @@ var ShowMemeber = (props:any)=>{
 
 
   return <div>
-    <Member id='testid' className={`bbbb ${getAge()} member ${u} aaaa`}>
-      <div className='member-age'></div>
+    <Member id='testid' className={`bbbb member ${u} aaaa`}>
+      <div className={`member-age ${getAge()}`}></div>
     </Member>
   </div>
 }

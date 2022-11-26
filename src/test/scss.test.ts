@@ -37,7 +37,7 @@ const testText5 = `
   }
 `
 const testText = `
-  .shop,.shop .shop2{
+  .shop.name,.shop .shop2{
     color:red;
     .name .name2{
       .member{
@@ -57,7 +57,7 @@ const testText9 = `
 `
 const testText3 = `
   color:red;
-  .shop .name{
+  .shop.name{
     .name2{
       .member{
 
