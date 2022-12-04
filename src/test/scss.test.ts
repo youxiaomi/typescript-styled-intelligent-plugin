@@ -3,6 +3,7 @@
 import { describe ,suite} from "mocha"
 import * as assert from "assert"
 import { getScssService } from "../service/cssService"
+import { extractStyleSheetSelectorWorkWrap } from "../parser/extractStyleSheet"
 
 
 
@@ -37,7 +38,7 @@ const testText5 = `
   }
 `
 const testText = `
-  .shop.name,.shop .shop2{
+  div .shop .name,.shop.shop2{
     color:red;
     .name .name2{
       .member{
@@ -107,3 +108,6 @@ let node = nodes.children[0].children[1].children[0]
 console.log(node);
 
 scssService.findSelectorTreeBySelector(styleSheet,styleSheet2)
+
+
+extractStyleSheetSelectorWorkWrap(styleSheet as any,styleSheet.getText().indexOf('name1'))

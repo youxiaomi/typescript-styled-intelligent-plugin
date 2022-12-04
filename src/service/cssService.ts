@@ -159,9 +159,9 @@ class ScssService {
 
     return styleSheet
   }
-  getRootRuleset = (styleSheet:Node) => {
+  getRootRuleset = (styleSheet:Node):Nodes.RuleSet => {
     let [ruleSet] = styleSheet.getChildren()
-    return ruleSet
+    return ruleSet as Nodes.RuleSet
   }
   findSelectorTree(rootNode:Node,pos:number){
     const interationNode = (_node:Node)=>{
@@ -175,17 +175,29 @@ class ScssService {
     }
     return interationNode(rootNode)
   }
-  findSelectorTreeBySelector(targetStyleSheet:Node, sourceStyleSheet:Node){
-
-    const getRulesetsOfDeclartions = (declarations:Node[])=>{
-      return declarations.filter(declartion => declartion.type == NodeType.Ruleset) as RuleSet[]
+  getRulesetsOfDeclartions(NodeDeclarations:Nodes.Declarations | undefined){
+    if(!NodeDeclarations){
+      return []
     }
+    let declarations = NodeDeclarations.getChildren()
+    return declarations.filter(declartion => declartion.type == NodeType.Ruleset) as RuleSet[]
+  }
+  /**
+   *  匹配目标样式表最深层重叠部分
+   */
+  findSelectorTreeBySelector(targetStyleSheet:Node, sourceStyleSheet:Node):any[]{
+
+    // const getRulesetsOfDeclartions = (declarations:Node[])=>{
+    //   return declarations.filter(declartion => declartion.type == NodeType.Ruleset) as RuleSet[]
+    // }
     let targetGenerator = new NodeGenerator(this.getRootRuleset(targetStyleSheet));
     let sourceRuleSet = this.getRootRuleset(sourceStyleSheet);
-    const getNodes = (targetGenerator:NodeGenerator, sourceRuleSet:Node)=>{
-      let [ undefinedNode, declartionNode ]  = sourceRuleSet.getChildren()
+    const getNodes = (targetGenerator:NodeGenerator, sourceRuleSet:Nodes.RuleSet)=>{
+      // let [ undefinedNode,declartionNode ]  = sourceRuleSet.getChildren()
+      let [ undefinedNode ]  = sourceRuleSet.getChildren()
+      let declartionNode = sourceRuleSet.getDeclarations()
       let sourceSelectors = undefinedNode.getChildren()
-      let declarationRuleSets = getRulesetsOfDeclartions(declartionNode.getChildren())
+      let declarationRuleSets = this.getRulesetsOfDeclartions(declartionNode)
       const recursiveSelector = (targetGeneratorClone:NodeGenerator,selector:Node)=>{
         let simpleSelectors = selector.getChildren();
         return !simpleSelectors.find(simpleSelector => targetGeneratorClone.findNodes(simpleSelector).length == 0)
@@ -219,85 +231,9 @@ class ScssService {
     let result = chidlren.map(cbNodes).filter(item => item) as  Node[]
     return result.length ? result : undefined
   }
+  /** 解析css样式表selector,感觉没啥用 */
   getCssSelectorNode(node: Node){
-    function extractSelector(node: Nodes.Selector){
-      let chidlren = node.getChildren()
-      return chidlren.map(extractStyleSheetSelectorWork)
-    }
-    function extractSimpleSelector(node: Nodes.SimpleSelector){
-      // let {  getSelectors,getDeclarations } = node
-      let chidlren = node.getChildren()
-      return chidlren.map(extractStyleSheetSelectorWork)
-    }
-    function extractIdentifier(node: Nodes.Identifier){
-      // let {  getSelectors,getDeclarations } = node
-      // let chidlren = node.getChildren()
-      // return chidlren.map(extractStyleSheetSelectorWork)
-      return {
-        cssNode: node,
-      }
-    }
-    function extractIdentifierSelector(node: Node){
-      // let {  getSelectors,getDeclarations } = node
-      // let chidlren = node.getChildren()
-      // return chidlren.map(extractStyleSheetSelectorWork)
-      return {
-        cssNode: node,
-      }
-    }
-    
-    function extractClass(node: Node){
-      // let {  getSelectors,getDeclarations } = node
-      let chidlren = node.getChildren()
-      return chidlren.map(extractStyleSheetSelectorWork)
-    }
-    function extractDeclarations(node: Nodes.Declarations){
-      let children = node.getChildren()
-      return children.map(extractStyleSheetSelectorWork)
-    }
-    function extractRuleset(node:Nodes.RuleSet){
-      const selectors = node.getSelectors().getChildren()
-      const _declarations = node.getDeclarations()
-      const declarations  = _declarations ? _declarations.getChildren() : []
-      const extractSelectors = selectors.map(extractStyleSheetSelectorWork).filter(item => item)
-      const extractChildrenSelectors = declarations.map(extractStyleSheetSelectorWork).filter(item => item)
-      return {
-        type: 'ruleSet',
-        cssNode: node,
-        selectors: extractSelectors,
-        children: extractChildrenSelectors,
-      }
-    }
-    function extractUndefined(node:Node){
-      //ruleset 的子级 selector
-      let chidlren = node.getChildren();
 
-      return chidlren.map(extractStyleSheetSelectorWork)
-    }
-
-    function extractStyleSheetSelectorWork(node:Node){
-
-      switch(node.type){
-        case NodeType.Ruleset:
-          return extractRuleset(node as Nodes.RuleSet);
-        case NodeType.Undefined:
-          return extractUndefined(node);
-        case NodeType.Selector:
-          return extractSelector(node as Nodes.Selector);
-        case NodeType.SimpleSelector:
-          return extractSimpleSelector(node as Nodes.SimpleSelector);
-        case NodeType.ClassSelector:
-          return extractClass(node);
-        case NodeType.Identifier:
-          return extractIdentifier(node as Nodes.Identifier);
-        case NodeType.IdentifierSelector:
-          return extractIdentifierSelector(node);
-        case NodeType.Declarations:
-        case NodeType.Stylesheet:
-          return extractDeclarations(node as Nodes.Declarations);
-      }
-
-    }
 
     // return extractStyleSheetSelectorWork(node)
     function iterationNode(node: Node){
@@ -332,6 +268,17 @@ class ScssService {
     console.log(classNameNodes)
     return classNameNodes
   }
+  extractSelectorStyleSheet= (styleSheet: Node,selecotor:Node)=>{
+
+
+
+  }
+
+
+
+  /**
+   *  把dome节点选中的selector 转换为styleSheet
+   */
   generateStyleSheetByJsxElementNode = (node:JsxElementNode,sourceSelectorNode?: ts.Node)=>{
     /**
      *  root:{

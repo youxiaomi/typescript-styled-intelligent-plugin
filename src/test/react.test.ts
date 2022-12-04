@@ -2,6 +2,7 @@ import ts from 'typescript'
 import fs from 'fs-extra'
 import TsHelp from '../service/tsHelp'
 import CssSelectorParser from '../parser/cssSelectorParser'
+import { extractStyleSheetSelectorWorkWrap } from '../parser/extractStyleSheet'
 // import * as ts from 'typescript'
 
 const options = {
@@ -56,18 +57,32 @@ var aa
 
 let references = languageService.getReferencesAtPosition(testFiles?.fileName || '', testFiles?.getFullText().indexOf('Member') || 0)
 
-
-
-
 const tsHelp = new TsHelp(ts, languageService);
-// const styledNode = tsHelp.findNode(testFiles, testFiles?.getFullText().indexOf('User'))
+const cssSelectorParser = new CssSelectorParser(ts, languageService, tsHelp)
 
-// const referenceNode = tsHelp.getReferenceNodes(testFiles.fileName,  styledNode?.pos || 0)
+const test = () => {
 
-// console.log(referenceNode)
 
-const cssSelectorParser =  new CssSelectorParser(ts,languageService,tsHelp)
-// let res = cssSelectorParser.parseCssSelector(referenceNode[0] as ts.JsxElement)
-// console.log(res);
+  const styledNode = tsHelp.findNode(testFiles, testFiles?.getFullText().indexOf('User'))
 
-cssSelectorParser.getStyledComponentNode(testFiles.fileName,testFiles?.getFullText().indexOf('user1'))
+  const referenceNode = tsHelp.getReferenceNodes(testFiles.fileName, styledNode?.pos || 0)
+
+  // console.log(referenceNode)
+
+
+
+  let res = cssSelectorParser.parseCssSelector(referenceNode[0] as ts.JsxElement)
+  // console.log(res);
+
+  cssSelectorParser.getStyledComponentNode(testFiles.fileName, testFiles?.getFullText().indexOf('user1'))
+
+}
+// test()
+
+
+const getSelectorDom = ()=>{
+
+  // extractStyleSheetSelectorWorkWrap()
+
+
+}

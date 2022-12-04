@@ -120,16 +120,18 @@ export default class TsHelp {
   isStyledComponentElement = (defineNode:ts.DefinitionInfo)=>{
     return defineNode.containerName === containerNames.StyledComponentBase
   }
-  getStyledTemplateScss = (node:ts.Node):{scssText:string,TaggedTemplateNode:ts.TaggedTemplateExpression}|undefined=>{
+  getStyledTemplateScss = (node:ts.Node):{scssText:string,TaggedTemplateNode:ts.TaggedTemplateExpression,template: ts.TemplateLiteral}|undefined=>{
     if(node.kind == ts.SyntaxKind.FirstStatement){
       let _node = node as ts.VariableStatement
       let { declarationList } = _node
       let { declarations } = declarationList
       let scssText:string = ''
       let TaggedTemplateNode
+      let template
       declarations.forEach(declaration=>{
         if(declaration.initializer && declaration.initializer.kind == ts.SyntaxKind.TaggedTemplateExpression){
           let node = declaration.initializer  as ts.TaggedTemplateExpression
+          template = node.template
           scssText = node.template.getText();
           scssText = scssText.slice(1,-1)
           TaggedTemplateNode = declaration.initializer
@@ -138,6 +140,7 @@ export default class TsHelp {
       return {
         scssText: scssText,
         TaggedTemplateNode,
+        template: template,
       }
     }
   }

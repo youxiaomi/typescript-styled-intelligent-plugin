@@ -1,9 +1,10 @@
-import { decorateWithTemplateLanguageService,TemplateLanguageService,TemplateContext } from 'typescript-template-language-service-decorator'
+import { decorateWithTemplateLanguageService,TemplateLanguageService,TemplateContext } from './decorate'
 import { getSCSSLanguageService ,TextDocument} from 'vscode-css-languageservice'
 import { Node,NodeType } from 'vscode-css-languageservice/lib/umd/parser/cssNodes'
 
 
 import * as ts from 'typescript/lib/tsserverlibrary';
+import StyledLanguageServiceProxy from './styledLanguageServiceProxy';
 
 type Ts  = typeof import("typescript/lib/tsserverlibrary")
 class TemplateScssLanguageService implements TemplateLanguageService {
@@ -359,10 +360,11 @@ function init(modules: { typescript: typeof import("typescript/lib/tsserverlibra
   
     function create(info: ts.server.PluginCreateInfo) {
 
-
+      return new StyledLanguageServiceProxy( modules.typescript,info.languageService,info.project,).start(info.languageService)
 
       return decorateWithTemplateLanguageService(
-        modules.typescript,info.languageService,
+        modules.typescript,
+        info.languageService,
         info.project,
         new TemplateScssLanguageService(modules.typescript,info),
         {tags:['styled'],enableForStringWithSubstitutions: true})

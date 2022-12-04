@@ -8,6 +8,8 @@ import { getScssService } from '../service/cssService'
 import TsHelp from '../service/tsHelp'
 import { findResult, flatten, omitUndefined, unique } from '../utils/utils'
 import extractCssSelectorWorkWrap, { JsxElementNode,CandidateTextNode } from './extractCssSelector'
+import * as CssNode from 'vscode-css-languageservice/lib/umd/parser/cssNodes'
+
 
 
 type StyledComponentNode = {
@@ -28,6 +30,9 @@ export default class CssSelectorParser{
   typescript:Ts
   languageService: ts.LanguageService
   tsHelp: TsHelp
+  /**
+   * extracting the dom node css selector
+   */
   parseCssSelector = (node: ts.JsxElement | undefined):JsxElementNode[]=>{
     let languageService = this.languageService
     if(!node || node.kind != ts.SyntaxKind.JsxElement){
@@ -42,6 +47,9 @@ export default class CssSelectorParser{
     // console.log(aa);
     return extractSelectorNode
   }
+  /**
+   * 获取某个字符串的存在的styledComponent组件节点
+   */
   getStyledComponentNode = (fileName: string,pos:number)=>{
     let program = this.languageService.getProgram()
     let sourceFile = program?.getSourceFile(fileName);
@@ -211,6 +219,10 @@ export default class CssSelectorParser{
     return flattenNodes(node)
 
   }
+  /**
+   * 从js语法中提取styleSheet中css selector
+   * 
+   */
   getSelectors = (styledComponentNode:StyledComponentNode[],sourceSelector:ts.StringLiteral)=>{
     let isElement = (node:JsxElementNode)=>{
       return node.type == 'styledElement' || node.type == 'intrinsicElements'
@@ -247,7 +259,14 @@ export default class CssSelectorParser{
 
     const getCandidateSelector = (node:StyledComponentNode)=>{
       let result1:CandidateTextNode[]  = []
-      let result: any[] = []
+      type CondidateCssSelector = {
+        tsNode: ts.Node,
+        styledNode: ts.Node,
+        template: ts.TemplateLiteral
+
+      }
+      let result: CandidateSelector[] = []
+
 
       if(node.type == 'styledElement'){
         if(node.scssText.match(sourceSelector.text)){
@@ -256,16 +275,21 @@ export default class CssSelectorParser{
           let cssService = getScssService()
           let cssText = cssService.generateStyleSheetByJsxElementNode(parseCssSelectors[0],sourceSelector)
           let styleSheet = cssService.getScssStyleSheet(cssText)
-          let targetCssText = parseCssSelectors[0]
+
           let tsNode = parseCssSelectors[0].tsNode as ts.JsxElement
           let identiferName = this.tsHelp.getJsxOpeningElementIdentier(tsNode.openingElement)
           let styledDefintions =  this.tsHelp.getDefinitionLastNodeByIdentiferNode(identiferName!)
-          let { scssText = '' } = this.tsHelp.getStyledTemplateScss(styledDefintions) || {}
+          let { scssText = '',template } = this.tsHelp.getStyledTemplateScss(styledDefintions) || {}
 
           let currentStyledComponentStyleSheet = cssService.getScssStyleSheet(scssText)
           let cssNodes =  cssService.findSelectorTreeBySelector(currentStyledComponentStyleSheet,styleSheet);
-          console.log(cssNodes);
-          result = result.concat(cssNodes)
+          let candidateSelectors: CandidateSelector[]  = cssNodes.map(cssNode=>{
+            return new CandidateSelector(cssNode, template!)
+          })
+
+
+          console.log(candidateSelectors);
+          result = result.concat(candidateSelectors)
           // let candidateSelectors = findCandidateSelector(parseCssSelectors)
           // result = result.concat(candidateSelectors)
         }
@@ -282,12 +306,25 @@ export default class CssSelectorParser{
 
     let aa = flatten(styledComponentNode.map(getCandidateSelector))
     //候选selector
-    
+
 
     getScssService
     return aa
 
   }
+  
+
+
+}
+
+
+class CandidateSelector {
+  constructor(cssNode: CssNode.Node, templateNode: ts.TemplateLiteral ){
+    this.cssNode = cssNode
+    this.templateNode = templateNode
+  }
+  cssNode: CssNode.Node
+  templateNode : ts.TemplateLiteral
   
 
 
