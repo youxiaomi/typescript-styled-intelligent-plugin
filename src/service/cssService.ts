@@ -130,12 +130,13 @@ class NodeGenerator{
 
 class ScssService {
 
-  getScssStyleSheet(scssText: string) {
-    let styleSheet = scssLanguageService.parseStylesheet({
+
+  generateCssTextDocument(scssText:string,addRoot = true){
+    let doc:TextDocument = {
       uri: 'untitled://embedded.scss',
       languageId: 'scss',
       version: 1,
-      getText: () => `:root{${scssText}}`,
+      getText: () => addRoot ? `:root{${scssText}}` : scssText,
       // getText: () => `${scssText}`,
       positionAt: (offset: number) => {
         // const pos = context.toPosition(this.fromVirtualDocOffset(offset, context));
@@ -154,7 +155,40 @@ class ScssService {
         return 0
       },
       lineCount: scssText.split(/\n/g).length + 1,
-    }) as Node
+    }
+
+    return doc
+
+  }
+  getScssStyleSheet(scssText: string,addRoot = true) {
+    
+    let doc:TextDocument = {
+      uri: 'untitled://embedded.scss',
+      languageId: 'scss',
+      version: 1,
+      getText: () => addRoot ? `:root{${scssText}}` : scssText,
+      // getText: () => `${scssText}`,
+      positionAt: (offset: number) => {
+        // const pos = context.toPosition(this.fromVirtualDocOffset(offset, context));
+        // return this.toVirtualDocPosition(pos);
+        // 会有偏移量
+        debugger
+        return {
+          line: 0,
+          character: 0,
+        }
+      },
+      offsetAt: (position) => {
+        // const offset = context.toOffset(this.fromVirtualDocPosition(p));
+        // return this.toVirtualDocOffset(offset, context);
+        debugger
+        return 0
+      },
+      lineCount: scssText.split(/\n/g).length + 1,
+    }
+
+
+    let styleSheet = scssLanguageService.parseStylesheet(doc) as Node
     let [ruleSet] = styleSheet.getChildren();
 
     return styleSheet
@@ -223,9 +257,6 @@ class ScssService {
     console.log(nodes);
     return nodes
   }
-  getCssSelectors(node:Node,){
-
-  }
   forEachChild(node: Node,cbNodes:(node:Node)=>Node|undefined){
     let chidlren = node.getChildren()
     let result = chidlren.map(cbNodes).filter(item => item) as  Node[]
@@ -268,14 +299,6 @@ class ScssService {
     console.log(classNameNodes)
     return classNameNodes
   }
-  extractSelectorStyleSheet= (styleSheet: Node,selecotor:Node)=>{
-
-
-
-  }
-
-
-
   /**
    *  把dome节点选中的selector 转换为styleSheet
    */
@@ -356,6 +379,7 @@ class ScssService {
     }
     return generateSelectorNode(node,sourceSelectorNode)
   }
+  
 }
 
 export const getScssService = ()=>{

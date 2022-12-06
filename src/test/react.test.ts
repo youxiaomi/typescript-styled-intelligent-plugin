@@ -1,5 +1,4 @@
 import ts from 'typescript'
-import fs from 'fs-extra'
 import TsHelp from '../service/tsHelp'
 import CssSelectorParser from '../parser/cssSelectorParser'
 import { extractStyleSheetSelectorWorkWrap } from '../parser/extractStyleSheet'
@@ -48,6 +47,7 @@ const host: ts.LanguageServiceHost = {
 
 const languageService = ts.createLanguageService(host);
 const programe = languageService.getProgram()
+programe?.getProjectReferences
 const sourceFiles = programe?.getSourceFiles() || []
 let testFiles = sourceFiles.find(item => item.fileName.match('example/index.tsx')) as ts.SourceFile ;
 console.log(testFiles);
@@ -83,6 +83,8 @@ const test = () => {
 const getSelectorDom = ()=>{
 
   // extractStyleSheetSelectorWorkWrap()
+  cssSelectorParser.getSelectorCandidateByCssNode(testFiles.fileName,testFiles?.getFullText().indexOf('user1') )
 
 
 }
+getSelectorDom()

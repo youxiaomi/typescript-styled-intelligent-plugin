@@ -293,13 +293,22 @@ export default function extractCssSelectorWorkWrap ({ node,languageService, tsHe
  
   function extractStringLiteral(node: ts.StringLiteral):JsxElementNode[]{
     let { text,} = node
-    return [
-      {
+    text = text.trim()
+    let classNameTexts = text.split(' ').filter(item => item)
+    return classNameTexts.map(className =>{
+      return {
         type: "textNode",
-        text: text.trim(),
+        text: className,
         tsNode: node,
       }
-    ]
+    })
+    // return [
+    //   {
+    //     type: "textNode",
+    //     text: text,
+    //     tsNode: node,
+    //   }
+    // ]
   }
   function extractTaggedTemplateExpression(node: ts.TaggedTemplateExpression):JsxElementNode{
     const  { tag,template } = node

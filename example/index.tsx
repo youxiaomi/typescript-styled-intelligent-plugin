@@ -4,11 +4,7 @@ import styled from 'styled-components'
 
 
 var bb = 123
-const getAge = ()=>{
-  let   aa = 'a123'
-  let bb = aa ? 'user1' : 'b123'
-  return a ? aa :      bb      
-}
+
 var User = styled.div`
   #testid{
     .user1{
@@ -22,7 +18,11 @@ var User = styled.div`
   }
 
 `
-
+const getAge = ()=>{
+  let   aa = 'a123'
+  let bb = aa ? 'user1' : 'b123'
+  return a ? aa :      bb      
+}
 var roots = {
   aaa:'aaa',
 }

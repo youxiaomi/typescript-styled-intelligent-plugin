@@ -131,6 +131,8 @@ export function extractStyleSheetSelectorWorkWrap(styleSheet:Nodes.RuleSet,posit
   //   }
   // }
   let ruleSet = styleSheet.getChild(0) as Nodes.RuleSet
-  let result =  extractRuleset(ruleSet)
-  return result
+  let cssText =  extractRuleset(ruleSet)
+  if(cssText){
+    return cssService.getScssStyleSheet(cssText,false)
+  }
 }

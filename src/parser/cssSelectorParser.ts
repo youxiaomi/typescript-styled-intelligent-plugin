@@ -9,8 +9,8 @@ import TsHelp from '../service/tsHelp'
 import { findResult, flatten, omitUndefined, unique } from '../utils/utils'
 import extractCssSelectorWorkWrap, { JsxElementNode,CandidateTextNode } from './extractCssSelector'
 import * as CssNode from 'vscode-css-languageservice/lib/umd/parser/cssNodes'
-
-
+import { extractStyleSheetSelectorWorkWrap } from './extractStyleSheet'
+import TemplateUtil, { getTagVariableDeclarationNode, TemplateHelper } from '../utils/templateUtil'
 
 type StyledComponentNode = {
   type: 'styledElement',
@@ -312,11 +312,66 @@ export default class CssSelectorParser{
     return aa
 
   }
-  
 
+  getSelectorCandidateByCssNode(fileName: string, position: number){
+    let program = this.languageService.getProgram()
+    let sourceFile = program?.getSourceFile(fileName);
+    let cssService = getScssService()
+
+
+    // const sourceHelper = new StandardTemplateSourceHelper(
+    //   this.typescript,
+    //   {tags:['styled'],enableForStringWithSubstitutions: true},
+    //   new StandardScriptSourceHelper(this.typescript,this.project),
+    //   {
+    //     log:()=>{}
+    //   }
+    //   )
+  // }
+
+    let templateNode = this.tsHelp.findNode(sourceFile!,position)
+    // let templateNode2 = findNode(this.typescript, sourceFile!,position)
+    let templateCssText = templateNode?.getText() || ''
+    let templateNodeStyleSheet = cssService.getScssStyleSheet(templateCssText.slice(1,-1));
+    // let matchStyleSheet = extractStyleSheetSelectorWorkWrap(templateNodeStyleSheet,position)
+    console.log(templateNode);
+    let tagVariableDeclarationNode = getTagVariableDeclarationNode(templateNode)
+    if(tagVariableDeclarationNode){
+      let referenceNodes = omitUndefined(this.tsHelp.getReferenceNodes(fileName, tagVariableDeclarationNode.pos));
+      let cssSelectorDomNodes = this.parseCssSelector(referenceNodes[0] as ts.JsxElement);
+      cssSelectorDomNodes.map(cssSelectorDomNode=>{
+
+
+      })
+
+
+      // referenceNodes.map(node=>{
+      //   this.parseCssSelector(node as ts.JsxElement)
+
+      // })
+    }
+
+    // let templateUtil =  new TemplateUtil(this.typescript, new TemplateHelper(this.typescript,this.languageService))
+    // templateUtil.getTemplate(fileName,position)
+
+    // extractStyleSheetSelectorWorkWrap
+    // cssService.getCssSelectorNode
+
+  }
 
 }
-
+export function findNode(
+  typescript: typeof ts,
+  sourceFile: ts.SourceFile,
+  position: number
+): ts.Node | undefined {
+  function find(node: ts.Node): ts.Node | undefined {
+      if (position >= node.getStart() && position < node.getEnd()) {
+          return typescript.forEachChild(node, find) || node;
+      }
+  }
+  return find(sourceFile);
+}
 
 class CandidateSelector {
   constructor(cssNode: CssNode.Node, templateNode: ts.TemplateLiteral ){
