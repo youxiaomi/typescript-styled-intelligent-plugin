@@ -8,7 +8,7 @@ import { flatten, omitUndefined } from '../utils/utils'
 import { JsxElementNode, JsxElementSelector,CandidateTextNode } from '../parser/extractCssSelector'
 import TsHelp from './tsHelp'
 import { getTag, getTagVariableDeclarationNode } from '../utils/templateUtil'
-
+import StyleSheetScan from '../parser/styleSheetScan'
 
 const scssLanguageService = getSCSSLanguageService()
 
@@ -16,6 +16,7 @@ const scssLanguageService = getSCSSLanguageService()
 export const getScssStyleSheet = (scssText:string) =>{
   
 }
+
 
 
 class NodeSelectorGenerator{
@@ -419,45 +420,8 @@ class ScssService {
      *    }
      *  }
      */
-    class StyleSheetNodeScan{
-      /**
-       * .user,#user,{.age{}}
-       */
-      text = ''
-      private nodes:{offset:number,node: JsxElementSelector|CandidateTextNode|{ type:'braceOpen'|'braceClose'},text:string}[] = [] 
-      getText(){
-        return this.text
-      }
-      setText(text:string,node:JsxElementSelector|CandidateTextNode|{ type:'braceOpen'|'braceClose'}){
-        let lastCharacter = this.text.slice(-1)
-        if(lastCharacter && lastCharacter != '{' && node.type != 'braceOpen' && node.type != 'braceClose'){
-          this.text += ','
-        }
-        let offset = this.text.length
-        this.text += text
-        let textNode = {
-          text,
-          node,
-          offset,
-        }
-        this.nodes.push(textNode)
-      }
-      // getOffset(){
-      //   return this.text.length
-      // }
-      getTextNode(offset:number){
-        let nodeLength = this.nodes.length
-        let textNode = this.nodes.find((node,index)=>{
-          let nextNode = this.nodes[index]
-          if(node.offset >= offset && (!nextNode || nextNode.offset > offset)){
-            return true
-          }
-        })
-        return textNode
-      }
-    }
-
-    const styleSheetNodeScan = new StyleSheetNodeScan()
+    
+    const styleSheetNodeScan = new StyleSheetScan()
     const generateClassName = (selector:CandidateTextNode)=>{
       let tsNode = selector.tsNode as ts.StringLiteral
 

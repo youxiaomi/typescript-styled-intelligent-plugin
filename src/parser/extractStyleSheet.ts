@@ -7,10 +7,15 @@ import * as Nodes from 'vscode-css-languageservice/lib/umd/parser/cssNodes'
 import { findResult, flatten, omitUndefined } from '../utils/utils'
 import { JsxElementNode, JsxElementSelector, CandidateTextNode } from '../parser/extractCssSelector'
 import { CssTextDocument, getScssService } from '../service/cssService'
+import StyleSheetScan from "./styleSheetScan"
+
+
+
 const cssService = getScssService()
 
 
 export function extractStyleSheetSelectorWorkWrap(styleSheet:Nodes.Stylesheet,position:number,cssDoc:CssTextDocument){
+  let  targetNode: Nodes.Node | undefined
   function extractSelector(node: Nodes.Selector) {
     console.log(node.getText(),'selector',NodeType[node.type]);
     
@@ -18,6 +23,10 @@ export function extractStyleSheetSelectorWorkWrap(styleSheet:Nodes.Stylesheet,po
     let child =  children.find((node)=>extractSimpleSelector(node as Nodes.SimpleSelector));
     let text = node.getText()
     if(child){
+      let _text = text.slice(0,child.offset+ child.length)
+      // styleSheetScan.setText(_text, {type:'cssNode', node: child } )
+      // styleSheetScan.setText('{',{type:"braceOpen"})
+      // styleSheetScan.setText('}',{type:"braceClose"})
       return text.slice(0,child.offset+ child.length) + '{}'
     }
     return undefined
@@ -32,6 +41,7 @@ export function extractStyleSheetSelectorWorkWrap(styleSheet:Nodes.Stylesheet,po
     let currentNodeOffset = cssDoc.getOffsetInFile(node.offset)
    
     if(currentNodeOffset <= position && position <= (currentNodeOffset + node.length)){
+      targetNode = node
       return node
     }
     
@@ -90,6 +100,8 @@ export function extractStyleSheetSelectorWorkWrap(styleSheet:Nodes.Stylesheet,po
     }
     selectorResult = findResult(declarations,node => extractRuleset(node as Nodes.RuleSet))
     if(selectorResult){
+
+
       let text = `${node.getSelectors().getText()}{${selectorResult}}`
       return text
     }
@@ -140,6 +152,9 @@ export function extractStyleSheetSelectorWorkWrap(styleSheet:Nodes.Stylesheet,po
   let cssText =  extractRuleset(ruleSet)
   if(cssText){
     let cssDoc = cssService.getDefaultCssTextDocument(cssText)
-    return cssService.getScssStyleSheet(cssDoc)
+    return {
+      styleSheet:cssService.getScssStyleSheet(cssDoc),
+      targetNode,
+    }
   }
 }
