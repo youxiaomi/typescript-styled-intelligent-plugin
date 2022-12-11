@@ -6,6 +6,9 @@ import styled from 'styled-components'
 var bb = 123
 
 var User = styled.div`
+  .user{
+    
+  }
   #testid{
     .user1{
 
@@ -29,6 +32,7 @@ var roots = {
 
 
 var Member = styled.div`
+ 
   .user,.bbbb,.bbb div.member{
     color: blue;
     .user1{
@@ -67,21 +71,26 @@ const AA = () => {
 
   return <div>
     <User className={`user ${u}`}>
-      <ShowMemeber>
+      {/* <ShowMemeber>
 
       </ShowMemeber>
-      { ShowMemeber({}) }
-      <div className='name'>tom</div>
+      { ShowMemeber({}) } */}
+      <div id='testid' className='name'>
+        <div className='user1'>
+
+        </div>
+        tom
+      </div>
       <div className='name'>tom</div>
       <div className='age'>age</div>
     </User>
-    <div>
+    {/* <div>
 
     </div>
     <User className='user user2'>
       <div className='name name2'>tom</div>
       <div className='name'>tom</div>
       <div className='age'>age</div>
-    </User>
+    </User> */}
   </div>
 }

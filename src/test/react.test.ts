@@ -1,7 +1,7 @@
 import ts from 'typescript'
 import TsHelp from '../service/tsHelp'
 import CssSelectorParser from '../parser/cssSelectorParser'
-import { extractStyleSheetSelectorWorkWrap } from '../parser/extractStyleSheet'
+// import { extractStyleSheetSelectorWorkWrap } from '../parser/extractStyleSheet'
 // import * as ts from 'typescript'
 
 const options = {

@@ -6,11 +6,11 @@ import { NodeType, Node, RuleSet} from 'vscode-css-languageservice/lib/umd/parse
 import * as Nodes from 'vscode-css-languageservice/lib/umd/parser/cssNodes'
 import { findResult, flatten, omitUndefined } from '../utils/utils'
 import { JsxElementNode, JsxElementSelector, CandidateTextNode } from '../parser/extractCssSelector'
-import { getScssService } from '../service/cssService'
+import { CssTextDocument, getScssService } from '../service/cssService'
 const cssService = getScssService()
 
 
-export function extractStyleSheetSelectorWorkWrap(styleSheet:Nodes.RuleSet,position:number){
+export function extractStyleSheetSelectorWorkWrap(styleSheet:Nodes.Stylesheet,position:number,cssDoc:CssTextDocument){
   function extractSelector(node: Nodes.Selector) {
     console.log(node.getText(),'selector',NodeType[node.type]);
     
@@ -26,10 +26,16 @@ export function extractStyleSheetSelectorWorkWrap(styleSheet:Nodes.RuleSet,posit
     //.name.age
     // let {  getSelectors,getDeclarations } = node
     console.log(node.getText(),'SimpleSelector',NodeType[node.type]);
-
-    if(node.offset <= position && position <= (node.offset + node.length)){
+    // if(node.offset == 40){
+    //   console.log(node)
+    // }
+    let currentNodeOffset = cssDoc.getOffsetInFile(node.offset)
+   
+    if(currentNodeOffset <= position && position <= (currentNodeOffset + node.length)){
       return node
     }
+    
+    
     // let children = node.getChildren();
     // let text = node.getText()
     // let child = children.find((node)=>extractIdentifier(node as Nodes.Identifier));
@@ -133,6 +139,7 @@ export function extractStyleSheetSelectorWorkWrap(styleSheet:Nodes.RuleSet,posit
   let ruleSet = styleSheet.getChild(0) as Nodes.RuleSet
   let cssText =  extractRuleset(ruleSet)
   if(cssText){
-    return cssService.getScssStyleSheet(cssText,false)
+    let cssDoc = cssService.getDefaultCssTextDocument(cssText)
+    return cssService.getScssStyleSheet(cssDoc)
   }
 }

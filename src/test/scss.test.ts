@@ -4,6 +4,8 @@ import { describe ,suite} from "mocha"
 import * as assert from "assert"
 import { getScssService } from "../service/cssService"
 import { extractStyleSheetSelectorWorkWrap } from "../parser/extractStyleSheet"
+import { getSCSSLanguageService ,TextDocument,} from 'vscode-css-languageservice'
+const scssLanguageService = getSCSSLanguageService()
 
 
 
@@ -99,8 +101,8 @@ const testText2 = `
 
 const scssService = getScssService();
 
-let styleSheet = scssService.getScssStyleSheet(testText)
-let styleSheet2 = scssService.getScssStyleSheet(testText3)
+let styleSheet = scssLanguageService.parseStylesheet(testText)
+let styleSheet2 = scssLanguageService.parseStylesheet(testText3)
 
 let nodes= scssService.getCssSelectorNode(styleSheet);
 

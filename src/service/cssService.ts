@@ -6,6 +6,8 @@ import { NodeType,Node,RuleSet}  from 'vscode-css-languageservice/lib/umd/parser
 import * as Nodes from 'vscode-css-languageservice/lib/umd/parser/cssNodes'
 import { flatten, omitUndefined } from '../utils/utils'
 import { JsxElementNode, JsxElementSelector,CandidateTextNode } from '../parser/extractCssSelector'
+import TsHelp from './tsHelp'
+import { getTag, getTagVariableDeclarationNode } from '../utils/templateUtil'
 
 
 const scssLanguageService = getSCSSLanguageService()
@@ -41,6 +43,10 @@ class NodeSelectorGenerator{
     }
     let currentSimpleSelector = simpleSelectors[this.currentSimpleSelectorIndex];
     if(currentSimpleSelector){
+      //这个下面children 也会多个  &.user  children = [&,.user]
+      // let currentSimpleChildren = currentSimpleSelector.getChildren()
+      // let simpleSelectorChildrenTarget = simpleSelectorTarget.getChildren()
+
       let targetText = currentSimpleSelector.getText()
       let sourceText = simpleSelectorTarget.getText()
       if (targetText == sourceText) {
@@ -128,68 +134,168 @@ class NodeGenerator{
   }
 }
 
+
+export class TemplateStringContext{
+  constructor(
+    readonly node: ts.TemplateLiteral,
+    readonly tsHelp: TsHelp
+  ){
+
+  }
+  getFileName(){
+    return this.node.getSourceFile().fileName
+  }
+  getText(){
+    return this.node.getText();
+  }
+  getRawText(){
+    return this.getText().slice(1,-1)
+  }
+  toOffset(location: ts.LineAndCharacter): number{
+
+    return 0
+  }
+  toPosition(offset: number): ts.LineAndCharacter{
+
+    return {
+      line: 0,
+      character: 0
+    }
+  }
+}
+
+const amendStyleSheet = (text,tagName?:string)=>{
+  let startOffset = 0
+  if(text[0] == '`'){
+    text = text.slice(1,-1)
+    startOffset = -1
+  }
+  if(tagName){
+    // text = `${tagName}{${text}}`
+    text = tagName+'{'+text+'}'
+    startOffset += (tagName.length + 1)
+  }
+  let isExistRoot = !!text.slice(0,5).match(':root')
+  if(!isExistRoot){
+    startOffset += 6
+  }
+  return {
+    text: isExistRoot ? text : ':root{'+text+'}',
+    startOffset,
+  }
+}
+
+export type CssTextDocument =  TextDocument & {
+  getOffsetInFile:(offset:number)=>number
+}
+
 class ScssService {
 
-
-  generateCssTextDocument(scssText:string,addRoot = true){
-    let doc:TextDocument = {
+  getDefaultCssTextDocument(text){
+    let {text:cssText,startOffset} = amendStyleSheet(text)
+    let doc:CssTextDocument = {
       uri: 'untitled://embedded.scss',
       languageId: 'scss',
       version: 1,
-      getText: () => addRoot ? `:root{${scssText}}` : scssText,
+      getText: () => cssText,
       // getText: () => `${scssText}`,
       positionAt: (offset: number) => {
+        offset -= startOffset
+
+
+
+        // return templateStringContext.toPosition(offset)
         // const pos = context.toPosition(this.fromVirtualDocOffset(offset, context));
         // return this.toVirtualDocPosition(pos);
         // 会有偏移量
-        debugger
         return {
           line: 0,
           character: 0,
         }
       },
-      offsetAt: (position) => {
+      offsetAt: (position: ts.LineAndCharacter) => {
+        // return templateStringContext.toOffset(position)
         // const offset = context.toOffset(this.fromVirtualDocPosition(p));
         // return this.toVirtualDocOffset(offset, context);
-        debugger
         return 0
       },
-      lineCount: scssText.split(/\n/g).length + 1,
+      lineCount: text.split(/\n/g).length + 1,
+      getOffsetInFile:(offset:number)=> {
+        return offset - startOffset
+      },
+    }
+
+    return doc
+  }
+
+  generateCssTextDocument(templateStringContext:TemplateStringContext){
+
+    let text = templateStringContext.getText();
+    // let isExistRoot = !!text.slice(0,5).match(':root')
+    let tagName = getTag(templateStringContext.node)
+    let {text:cssText,startOffset} = amendStyleSheet(text,tagName)
+    let doc:CssTextDocument = {
+      uri: 'untitled://embedded.scss',
+      languageId: 'scss',
+      version: 1,
+      getText: () =>cssText,
+      // getText: () => `${scssText}`,
+      positionAt: (offset: number) => {
+        offset -= startOffset
+        return templateStringContext.toPosition(offset)
+        // const pos = context.toPosition(this.fromVirtualDocOffset(offset, context));
+        // return this.toVirtualDocPosition(pos);
+        // 会有偏移量
+        return {
+          line: 0,
+          character: 0,
+        }
+      },
+      offsetAt: (position: ts.LineAndCharacter) => {
+        return templateStringContext.toOffset(position)
+        // const offset = context.toOffset(this.fromVirtualDocPosition(p));
+        // return this.toVirtualDocOffset(offset, context);
+        return 0
+      },
+      lineCount: cssText.split(/\n/g).length + 1,
+      getOffsetInFile:(offset:number)=> {
+        return templateStringContext.node.getStart() + offset - startOffset
+      },
     }
 
     return doc
 
   }
-  getScssStyleSheet(scssText: string,addRoot = true) {
+  getScssStyleSheet(doc:TextDocument,addRoot = true) {
     
-    let doc:TextDocument = {
-      uri: 'untitled://embedded.scss',
-      languageId: 'scss',
-      version: 1,
-      getText: () => addRoot ? `:root{${scssText}}` : scssText,
-      // getText: () => `${scssText}`,
-      positionAt: (offset: number) => {
-        // const pos = context.toPosition(this.fromVirtualDocOffset(offset, context));
-        // return this.toVirtualDocPosition(pos);
-        // 会有偏移量
-        debugger
-        return {
-          line: 0,
-          character: 0,
-        }
-      },
-      offsetAt: (position) => {
-        // const offset = context.toOffset(this.fromVirtualDocPosition(p));
-        // return this.toVirtualDocOffset(offset, context);
-        debugger
-        return 0
-      },
-      lineCount: scssText.split(/\n/g).length + 1,
-    }
+    // let doc:TextDocument = {
+    //   uri: 'untitled://embedded.scss',
+    //   languageId: 'scss',
+    //   version: 1,
+    //   getText: () => addRoot ? `:root{${scssText}}` : scssText,
+    //   // getText: () => `${scssText}`,
+    //   positionAt: (offset: number) => {
+    //     // const pos = context.toPosition(this.fromVirtualDocOffset(offset, context));
+    //     // return this.toVirtualDocPosition(pos);
+    //     // 会有偏移量
+    //     debugger
+    //     return {
+    //       line: 0,
+    //       character: 0,
+    //     }
+    //   },
+    //   offsetAt: (position) => {
+    //     // const offset = context.toOffset(this.fromVirtualDocPosition(p));
+    //     // return this.toVirtualDocOffset(offset, context);
+    //     debugger
+    //     return 0
+    //   },
+    //   lineCount: scssText.split(/\n/g).length + 1,
+    // }
 
 
-    let styleSheet = scssLanguageService.parseStylesheet(doc) as Node
-    let [ruleSet] = styleSheet.getChildren();
+    let styleSheet = scssLanguageService.parseStylesheet(doc) as Nodes.Stylesheet
+    // let [ruleSet] = styleSheet.getChildren();
 
     return styleSheet
   }
@@ -299,10 +405,11 @@ class ScssService {
     console.log(classNameNodes)
     return classNameNodes
   }
+
   /**
-   *  把dome节点选中的selector 转换为styleSheet
+   *  把dom节点选中的selector 转换为styleSheet，没有selector就转换所有子节点
    */
-  generateStyleSheetByJsxElementNode = (node:JsxElementNode,sourceSelectorNode?: ts.Node)=>{
+  getStyleSheetScanByJsxElementNode = (node:JsxElementNode,sourceSelectorNode?: ts.Node)=>{
     /**
      *  root:{
      *    .a{
@@ -312,20 +419,61 @@ class ScssService {
      *    }
      *  }
      */
+    class StyleSheetNodeScan{
+      /**
+       * .user,#user,{.age{}}
+       */
+      text = ''
+      private nodes:{offset:number,node: JsxElementSelector|CandidateTextNode|{ type:'braceOpen'|'braceClose'},text:string}[] = [] 
+      getText(){
+        return this.text
+      }
+      setText(text:string,node:JsxElementSelector|CandidateTextNode|{ type:'braceOpen'|'braceClose'}){
+        let lastCharacter = this.text.slice(-1)
+        if(lastCharacter && lastCharacter != '{' && node.type != 'braceOpen' && node.type != 'braceClose'){
+          this.text += ','
+        }
+        let offset = this.text.length
+        this.text += text
+        let textNode = {
+          text,
+          node,
+          offset,
+        }
+        this.nodes.push(textNode)
+      }
+      // getOffset(){
+      //   return this.text.length
+      // }
+      getTextNode(offset:number){
+        let nodeLength = this.nodes.length
+        let textNode = this.nodes.find((node,index)=>{
+          let nextNode = this.nodes[index]
+          if(node.offset >= offset && (!nextNode || nextNode.offset > offset)){
+            return true
+          }
+        })
+        return textNode
+      }
+    }
+
+    const styleSheetNodeScan = new StyleSheetNodeScan()
     const generateClassName = (selector:CandidateTextNode)=>{
       let tsNode = selector.tsNode as ts.StringLiteral
 
-      return `.${selector.text || tsNode.text.trim()}`
+      let text = `.${selector.text || tsNode.text.trim()}`
+      styleSheetNodeScan.setText(text,selector)
     }
     const generateId = (selector:CandidateTextNode)=>{
       let tsNode = selector.tsNode as ts.StringLiteral
-
-      return `#${tsNode.text.trim()}`
+      let text = `#${tsNode.text.trim()}`
+      styleSheetNodeScan.setText(text,selector)
     }
     const generateElement = (selector:JsxElementSelector)=>{
       let tsNode = selector.tsNode as ts.Identifier
 
-      return `${tsNode.text.trim()}`
+      let text =  `${tsNode.text.trim()}`
+      styleSheetNodeScan.setText(text,selector)
     }
     const generateSelectorText = (selector:JsxElementSelector)=>{
       console.log(ts.SyntaxKind[selector.tsNode.kind]);
@@ -362,22 +510,43 @@ class ScssService {
           let _selectors = omitUndefined(_selectorsResult)
           if(_selectors.length){
 
-            let selectorResults = _selectors.map(generateSelectorText).filter(item => item)
-            let selectorStrings = flatten(selectorResults).join(',')
-            return `${selectorStrings}{}`
+            let selectorResults = _selectors.map((selector)=>{
+              let text = generateSelectorText(selector);
+              return {
+                text,
+                selector: selector
+              }
+            })
+            // let nodes = []
+            // selectorResults.forEach(selecotrResult=>{
+            //   if(selecotrResult.text){
+
+            //   }
+            // })
+            // return ''
+            // let selectorStrings = flatten(selectorResults).join(',')
+            // return `${selectorStrings}{}`
             // selectors = _selectors
           }
         }
         // 多class可以并集，生成  .user.age
 
-        let selectorResults = selectors.map(generateSelectorText).filter(item => item)
-        let selectorStrings = flatten(selectorResults).join(',')
-        let childrenSelectorResults = children.map((node)=>generateSelectorNode(node,sourceSelectorNode)).filter(item=>item)
-        let childrenSelectors = childrenSelectorResults.join(``)
-        return `${selectorStrings}{${childrenSelectors}}`
+        let selectorResults = selectors.map(generateSelectorText)
+        if(selectors.length){
+          styleSheetNodeScan.setText('{',{type:'braceOpen'})
+        }
+        // let selectorStrings = flatten(selectorResults).join(',')
+        let childrenSelectorResults = children.map((node)=>generateSelectorNode(node,sourceSelectorNode))
+        // let childrenSelectors = childrenSelectorResults.join(``)
+        if(selectors.length){
+          styleSheetNodeScan.setText('}',{type:"braceClose"})
+        }
+        // return `${selectorStrings}{${childrenSelectors}}`
       }
     }
-    return generateSelectorNode(node,sourceSelectorNode)
+    generateSelectorNode(node,sourceSelectorNode)
+    return styleSheetNodeScan
+    // return generateSelectorNode(node,sourceSelectorNode)
   }
   
 }
