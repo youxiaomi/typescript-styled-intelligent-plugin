@@ -15,7 +15,7 @@ export default class StyleSheetScan{
   }
   setText(text:string,node:Node){
     let lastCharacter = this.text.slice(-1)
-    if(lastCharacter && lastCharacter != '{' && node.type != 'braceOpen' && node.type != 'braceClose'){
+    if(lastCharacter && lastCharacter != '{' && lastCharacter != '}' && node.type != 'braceOpen' && node.type != 'braceClose'){
       this.text += ','
     }
     let offset = this.text.length

@@ -87,4 +87,5 @@ const getSelectorDom = ()=>{
 
 
 }
-getSelectorDom()
+// getSelectorDom()
+test()

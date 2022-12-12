@@ -47,10 +47,15 @@ export default class CssSelectorParser{
     // console.log(aa);
     return extractSelectorNode
   }
+  getSelectorPostion = (stringNode: ts.StringLiteral)=>{
+    let text = stringNode.getFullText()
+    text.slice(0)
+
+  }
   /**
    * 获取某个字符串的存在的styledComponent组件节点
    */
-  getStyledComponentNode = (fileName: string,pos:number)=>{
+  getStyledComponentNode = (fileName: string,pos:number):ts.DefinitionInfoAndBoundSpan | undefined=>{
     let program = this.languageService.getProgram()
     let sourceFile = program?.getSourceFile(fileName);
     if(!sourceFile){
@@ -65,7 +70,6 @@ export default class CssSelectorParser{
     }
     let stringNode = node as ts.StringLiteral
 
-    let styledNode = []
     node = node.parent
 
     const workVariableDeclarationwork = (node:ts.VariableDeclaration)=>{
@@ -107,37 +111,18 @@ export default class CssSelectorParser{
             return node.parent && node.parent.parent && findStyledNode(node.parent.parent) || undefined
           }
         }else{
-          //   ts
-          // }
           return node.parent && node.parent.parent && findStyledNode(node.parent.parent) || undefined
         }
       }
     }
-    const workJsxElement = (node: ts.JsxElement)=>{
-      return findStyledNode(node)
-    }
+    // const workJsxElement = (node: ts.JsxElement)=>{
+    //   return findStyledNode(node)
+    // }
     const findStyledNode = (node:ts.Node):StyledComponentNode[]|undefined=>{
-      var aa = sourceFile;var a1  = this;
       console.log(ts.SyntaxKind[node.kind],node.getFullText());
-      //CallExpression getAge()
       switch(node.kind){
         case ts.SyntaxKind.VariableDeclaration:
           return workVariableDeclarationwork(node as ts.VariableDeclaration);
-        // case ts.SyntaxKind.ArrowFunction:
-        //   return workArrowFunction(node as ts.ArrowFunction,child);
-        // case ts.SyntaxKind.ConditionalExpression:
-        //   // return workConditionalExpression(node as ts.ConditionalExpression,child)
-        // case ts.SyntaxKind.Identifier:
-        // case ts.SyntaxKind.ReturnStatement:
-        // case ts.SyntaxKind.ArrowFunction:
-        // case ts.SyntaxKind.FunctionDeclaration:
-        // case ts.SyntaxKind.Block:
-        // case ts.SyntaxKind.CallExpression:
-        // case ts.SyntaxKind.TemplateSpan:
-        // case ts.SyntaxKind.TemplateExpression:
-        // case ts.SyntaxKind.JsxExpression:
-        // case ts.SyntaxKind.JsxAttributes:
-        //   return findStyledNode(node.parent);
         case ts.SyntaxKind.JsxAttribute:
           return workJsxAttribute(node as ts.JsxAttribute);
         case ts.SyntaxKind.JsxOpeningElement:
@@ -152,28 +137,24 @@ export default class CssSelectorParser{
     }
 
     let _node = findStyledNode(node)
-    // let aa = this.parseCssSelector(node[0].tsNode)
-    // let aa = this.parseCssSelector(node[0].parent[0].tsNode)
-    // if(aa){
-      this.getSelectors(_node!,stringNode)
-    // }
-    // console.log(aa);
-
-
-    //todo  查找dom点击节点
-    // while(node){
-    //   console.log(ts.SyntaxKind[node.kind]);
-
-    //   // node = node?.parent
-    // }
-    let references = this.languageService.getReferencesAtPosition(fileName,pos)
+    let definitions = this.getSelectors(_node!, stringNode);
+    if(!definitions.length){
+      return undefined
+    }
+    return {
+      definitions:definitions,
+      textSpan:{
+        start: stringNode.getStart(),
+        length: stringNode.getText().length
+      }
+    }
+    // let references = this.languageService.getReferencesAtPosition(fileName,pos)
     
-    references?.map(reference=>{
-      let sourceFile = program?.getSourceFile(reference.fileName)
-      let node = this.tsHelp.findNode(sourceFile!, reference.textSpan.start)
-      console.log(node);
-      
-    })
+    // references?.map(reference=>{
+    //   let sourceFile = program?.getSourceFile(reference.fileName)
+    //   let node = this.tsHelp.findNode(sourceFile!, reference.textSpan.start)
+    //   console.log(node);
+    // })
   }
 
   flatClassNameChildrenNodes(node){
@@ -258,24 +239,19 @@ export default class CssSelectorParser{
     }
 
     const getCandidateSelector = (node:StyledComponentNode)=>{
-      let result1:CandidateTextNode[]  = []
-      type CondidateCssSelector = {
-        tsNode: ts.Node,
-        styledNode: ts.Node,
-        template: ts.TemplateLiteral
-
-      }
-      let result: CandidateSelector[] = []
+      let result: ts.DefinitionInfo[] = []
 
 
       if(node.type == 'styledElement'){
         if(node.scssText.match(sourceSelector.text)){
           // let parseCssSelectors = this.parseCssSelector(node.tsNode as ts.JsxElement)
           let parseCssSelectors = this.parseCssSelector(node.tsNode as ts.JsxElement);
-          let cssService = getScssService()
+          let cssService = getScssService();
           let cssScan = cssService.getStyleSheetScanByJsxElementNode(parseCssSelectors[0],sourceSelector);
-          let cssText = cssService.getDefaultCssTextDocument(cssScan.getText())
-          let styleSheet = cssService.getScssStyleSheet(cssText)
+          // new TemplateStringContext();
+
+          let cssDoc = cssService.getDefaultCssTextDocument(cssScan.getText())
+          let styleSheet = cssService.getScssStyleSheet(cssDoc)
 
           let tsNode = parseCssSelectors[0].tsNode as ts.JsxElement
           let identiferName = this.tsHelp.getJsxOpeningElementIdentier(tsNode.openingElement)
@@ -285,13 +261,24 @@ export default class CssSelectorParser{
           let doc = cssService.generateCssTextDocument(context)
           let currentStyledComponentStyleSheet = cssService.getScssStyleSheet(doc)
           let cssNodes =  cssService.findSelectorTreeBySelector(currentStyledComponentStyleSheet,styleSheet);
-          let candidateSelectors: CandidateSelector[]  = cssNodes.map(cssNode=>{
-            return new CandidateSelector(cssNode, template!)
+          cssNodes = unique(cssNodes,(pre,current)=>pre.offset == current.offset)
+          let fileName = context.getFileName();
+          const definitions: ts.DefinitionInfo[] = cssNodes.map(node=>{
+            return {
+              fileName,
+              kind: ts.ScriptElementKind.string,
+              name:'',
+              containerKind: ts.ScriptElementKind.string,
+              containerName:'',
+              textSpan:{
+                start: doc.getOffsetInFile(node.offset),
+                length: node.length
+              }
+            }
           })
 
-
-          console.log(candidateSelectors);
-          result = result.concat(candidateSelectors)
+          console.log(definitions);
+          result = result.concat(definitions)
           // let candidateSelectors = findCandidateSelector(parseCssSelectors)
           // result = result.concat(candidateSelectors)
         }
@@ -306,12 +293,11 @@ export default class CssSelectorParser{
     }
 
 
-    let aa = flatten(styledComponentNode.map(getCandidateSelector))
+    let definitions = flatten(styledComponentNode.map(getCandidateSelector))
     //候选selector
 
-
+    return definitions
     // getScssService
-    return aa
 
   }
 
@@ -320,17 +306,6 @@ export default class CssSelectorParser{
     let sourceFile = program?.getSourceFile(fileName);
     let cssService = getScssService()
    
-
-    // const sourceHelper = new StandardTemplateSourceHelper(
-    //   this.typescript,
-    //   {tags:['styled'],enableForStringWithSubstitutions: true},
-    //   new StandardScriptSourceHelper(this.typescript,this.project),
-    //   {
-    //     log:()=>{}
-    //   }
-    //   )
-  // }
-
     let templateNode = this.tsHelp.findNode(sourceFile!,position)
     // let templateNode2 = findNode(this.typescript, sourceFile!,position)
     let templateStringContext = new TemplateStringContext(templateNode as ts.TemplateLiteral,this.tsHelp)

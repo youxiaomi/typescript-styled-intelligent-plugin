@@ -247,10 +247,10 @@ class ScssService {
         // const pos = context.toPosition(this.fromVirtualDocOffset(offset, context));
         // return this.toVirtualDocPosition(pos);
         // 会有偏移量
-        return {
-          line: 0,
-          character: 0,
-        }
+        // return {
+        //   line: 0,
+        //   character: 0,
+        // }
       },
       offsetAt: (position: ts.LineAndCharacter) => {
         return templateStringContext.toOffset(position)
@@ -328,9 +328,6 @@ class ScssService {
    */
   findSelectorTreeBySelector(targetStyleSheet:Node, sourceStyleSheet:Node):any[]{
 
-    // const getRulesetsOfDeclartions = (declarations:Node[])=>{
-    //   return declarations.filter(declartion => declartion.type == NodeType.Ruleset) as RuleSet[]
-    // }
     let targetGenerator = new NodeGenerator(this.getRootRuleset(targetStyleSheet));
     let sourceRuleSet = this.getRootRuleset(sourceStyleSheet);
     const getNodes = (targetGenerator:NodeGenerator, sourceRuleSet:Nodes.RuleSet)=>{
@@ -459,6 +456,8 @@ class ScssService {
         let selectors = node.selectors
         if(sourceSelectorNode){
           let _selectorsResult = node.selectors.map(selector=>{
+            console.log(selector.tsNode.getFullText());
+            
             if(selector.selectorType == 'className' || selector.selectorType == 'id'){
               let child = (selector.children || []).find(item => item.tsNode == sourceSelectorNode);
               let _selector = {...selector}
@@ -473,24 +472,12 @@ class ScssService {
           })
           let _selectors = omitUndefined(_selectorsResult)
           if(_selectors.length){
-
-            let selectorResults = _selectors.map((selector)=>{
+            _selectors.forEach((selector)=>{
               let text = generateSelectorText(selector);
-              return {
-                text,
-                selector: selector
-              }
+              styleSheetNodeScan.setText('{',{type:'braceOpen'})
+              styleSheetNodeScan.setText('}',{type:"braceClose"})
             })
-            // let nodes = []
-            // selectorResults.forEach(selecotrResult=>{
-            //   if(selecotrResult.text){
-
-            //   }
-            // })
-            // return ''
-            // let selectorStrings = flatten(selectorResults).join(',')
-            // return `${selectorStrings}{}`
-            // selectors = _selectors
+            return true
           }
         }
         // 多class可以并集，生成  .user.age
@@ -500,11 +487,18 @@ class ScssService {
           styleSheetNodeScan.setText('{',{type:'braceOpen'})
         }
         // let selectorStrings = flatten(selectorResults).join(',')
-        let childrenSelectorResults = children.map((node)=>generateSelectorNode(node,sourceSelectorNode))
+        let isExist = false
+        for(let node of children){
+          isExist = generateSelectorNode(node,sourceSelectorNode) || false
+          if(sourceSelectorNode && isExist){
+            break
+          }
+        }
         // let childrenSelectors = childrenSelectorResults.join(``)
         if(selectors.length){
           styleSheetNodeScan.setText('}',{type:"braceClose"})
         }
+        return isExist
         // return `${selectorStrings}{${childrenSelectors}}`
       }
     }

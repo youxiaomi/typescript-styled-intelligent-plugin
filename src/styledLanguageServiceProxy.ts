@@ -30,25 +30,31 @@ export default class StyledLanguageServiceProxy {
   intercepts: Partial<{ [name in keyof ts.LanguageService]: LanguageServiceMethodWrapper<any> }> = {}
 
   private getDefinitionAndBoundSpan(fileName: string, position: number): ts.DefinitionInfoAndBoundSpan | undefined {
+
     const tsHelp = new TsHelp(this.typescript, this.languageService);
 
     const cssSelectorParse = new CssSelectorParser(this.typescript, this.languageService, tsHelp);
 
-    let result = cssSelectorParse.getSelectorCandidateByCssNode(fileName,position)
+    let result =  cssSelectorParse.getStyledComponentNode(fileName, position)
+    if(result){
+      return result
+    }
+    let context = this.helper.getTemplate(fileName,position)
+    if(!context){
+      return
+    }
+    result = cssSelectorParse.getSelectorCandidateByCssNode(fileName,position);
     return result
   }
   private tryGetDefinitionAndBoundSpan = (delegate) => {
 
     return (fileName: string, position: number, ...rest: any[]) => {
-      // let context = this.helper.getTemplate(fileName,position)
-      // if (!context) {
-      //   return delegate(fileName,position,...rest)
-      // }
 
       let res = this.getDefinitionAndBoundSpan(fileName, position)
       if (res) {
         return res
       }
+      
       return (delegate as any)(fileName, position, ...rest)
     }
   }
