@@ -3,23 +3,6 @@ import * as ts from 'typescript';
 
 export * from './_teamplteUtil'
 
-
-
-export const getTagVariableDeclarationNode = (node: ts.Node | undefined) => {
-  if (!node) {
-    return
-  }
-  if (node.kind == ts.SyntaxKind.FirstTemplateToken) {
-    node = node.parent
-  }
-  if (node.kind == ts.SyntaxKind.TaggedTemplateExpression) {
-    node = node.parent
-  }
-  if (node.kind == ts.SyntaxKind.VariableDeclaration) {
-    return node
-  }
-  return undefined
-}
 export function escapeRegExp(string: string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -35,9 +18,23 @@ export function isTagged(node: ts.TaggedTemplateExpression, tags: ReadonlyArray<
       || text.startsWith(tag + '[')
   );
 }
-export const getTag = (node: ts.TemplateLiteral)=>{
-  let tagTemplateNode =  node.parent as ts.TaggedTemplateExpression
-  let text = tagTemplateNode.tag.getText()
-  // let tags = ['styled']
-  return (text.match(/(?<=styled\.).+/) || [])[0]
+
+export function getTagName(node: ts.TaggedTemplateExpression, tags: ReadonlyArray<string>){
+  const text = node.tag.getText();
+  return (text.match(/(?<=styled\.).+/) || [])[0];
+}
+
+export function getTaggedLiteralName(
+  typescript: typeof ts,
+  node: ts.NoSubstitutionTemplateLiteral,
+  tags: ReadonlyArray<string>
+) {
+  if (!node || !node.parent) {
+      return 
+  }
+  if (node.parent.kind !== typescript.SyntaxKind.TaggedTemplateExpression) {
+      return
+  }
+  const tagNode = node.parent as ts.TaggedTemplateExpression;
+  return getTagName(tagNode,tags)
 }

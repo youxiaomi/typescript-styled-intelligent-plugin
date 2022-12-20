@@ -5,6 +5,7 @@ type Ts  = typeof import("typescript")
 // import  from 'typescript/lib/tsserverlibrary'
 import * as ts from 'typescript'
 import { containerNames } from '../parser/types'
+import { getTaggedLiteralName, getTagName, isTaggedLiteral } from '../utils/templateUtil'
 import { omitUndefined, unique } from '../utils/utils'
 
 export default class TsHelp {
@@ -152,6 +153,64 @@ export default class TsHelp {
       }
     });
   }
+  getTag = (node: ts.Node)=>{
+    switch(node.kind){
+      case ts.SyntaxKind.TaggedTemplateExpression: 
+        return getTagName(node as ts.TaggedTemplateExpression,['styled'])
+      case ts.SyntaxKind.NoSubstitutionTemplateLiteral:
+        return getTaggedLiteralName(this.typescript, node as ts.NoSubstitutionTemplateLiteral,['styled'])
+      case ts.SyntaxKind.TemplateHead:
+        if(node.parent && node.parent.parent){
+          return this.getTag(node.parent.parent)
+        }
+      case ts.SyntaxKind.TemplateExpression:
+        return this.getTag(node.parent);
+      case ts.SyntaxKind.TemplateMiddle:
+      case ts.SyntaxKind.TemplateTail:
+        if(node.parent && node.parent.parent){
+          return this.getTag(node.parent.parent.parent)
+        }
+    }
+  }
+  getTagVariableDeclarationNode = (node: ts.Node | undefined) => {
+    if (!node) {
+      return
+    }
   
+    switch(node.kind){
+      case ts.SyntaxKind.TaggedTemplateExpression: 
+      case ts.SyntaxKind.TemplateExpression: 
+        return this.getTagVariableDeclarationNode(node.parent)
+      case ts.SyntaxKind.NoSubstitutionTemplateLiteral:
+        return this.getTagVariableDeclarationNode(node.parent as ts.TaggedTemplateExpression)
+      case ts.SyntaxKind.TemplateHead:
+        if(node.parent && node.parent.parent){
+          return this.getTagVariableDeclarationNode(node.parent.parent)
+        }
+      case ts.SyntaxKind.TemplateMiddle:
+      case ts.SyntaxKind.TemplateTail:
+        if(node.parent && node.parent.parent){
+          return this.getTagVariableDeclarationNode(node.parent.parent.parent)
+        }
+      case ts.SyntaxKind.VariableDeclaration:
+        return node
+    }
+    return undefined
+  }
+  getTemplateNode = (sourceFile: ts.SourceFile,position:number)=>{
+    let node = this.findNode(sourceFile,position)
+    const getTemplateNode = (node:ts.Node)=>{
+      switch(node.kind){
+        case ts.SyntaxKind.TemplateHead:
+          return node.parent;
+        case ts.SyntaxKind.LastTemplateToken:
+          return getTemplateNode(node.parent);
+        case ts.SyntaxKind.TemplateSpan:
+          return getTemplateNode(node.parent)
+      }
+      return node
+    }
+    return getTemplateNode(node)
+  }
 }
 

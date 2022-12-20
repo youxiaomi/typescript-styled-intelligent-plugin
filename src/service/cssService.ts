@@ -6,16 +6,14 @@ import { NodeType,Node,RuleSet}  from 'vscode-css-languageservice/lib/umd/parser
 import * as Nodes from 'vscode-css-languageservice/lib/umd/parser/cssNodes'
 import { flatten, omitUndefined } from '../utils/utils'
 import { JsxElementNode, JsxElementSelector,CandidateTextNode } from '../parser/extractCssSelector'
+import * as substituter from 'typescript-styled-plugin/lib/_substituter'
 import TsHelp from './tsHelp'
-import { getTag, getTagVariableDeclarationNode } from '../utils/templateUtil'
+
 import StyleSheetScan from '../parser/styleSheetScan'
 
 const scssLanguageService = getSCSSLanguageService()
 
 
-export const getScssStyleSheet = (scssText:string) =>{
-  
-}
 
 
 
@@ -26,6 +24,7 @@ class NodeSelectorGenerator{
   parent:Node
   declarations:Node[]
   declartionsParent:Node
+  matchSource:Node|undefined
   constructor(Selector:Node,declarations,selectorParent:Node,declartionsParent:Node){
     this.selector = Selector
     this.parent = selectorParent
@@ -37,7 +36,7 @@ class NodeSelectorGenerator{
         return new NodeGenerator(declaration,declartionsParent)
       })
   }
-  private getNode = (simpleSelectorTarget:Node) =>{
+  getNode = (simpleSelectorSource:Node) =>{
     let simpleSelectors = this.selector.getChildren()
     if(this.currentSimpleSelectorIndex < simpleSelectors.length){
       this.currentSimpleSelectorIndex++
@@ -49,16 +48,17 @@ class NodeSelectorGenerator{
       // let simpleSelectorChildrenTarget = simpleSelectorTarget.getChildren()
 
       let targetText = currentSimpleSelector.getText()
-      let sourceText = simpleSelectorTarget.getText()
+      let sourceText = simpleSelectorSource.getText()
       if (targetText == sourceText) {
+        this.matchSource = simpleSelectorSource
         return currentSimpleSelector
       } else {
-        return this.getNode(simpleSelectorTarget)
+        return this.getNode(simpleSelectorSource)
       }
     }else{
       if(this.declarationGenerators.length){
         return this.declarationGenerators = this.declarationGenerators.filter(declaration=>{
-          return declaration.findNodes(simpleSelectorTarget)
+          return declaration.getNode(simpleSelectorSource)
         })
       }else{
         return undefined
@@ -66,24 +66,47 @@ class NodeSelectorGenerator{
       
     }
   }
-  findNodes =(simpleSelectorTarget:Node) =>{
-    return this.getNode(simpleSelectorTarget)
-  }
+  // findNodes =(simpleSelectorTarget:Node) =>{
+  //   return this.getNode(simpleSelectorTarget)
+  // }
   getCurrentNodes = ():Node[]=>{
+    return this.getSelectNodes(true)
+    // let simpleSelectors = this.selector.getChildren()
+    // let currentSimpleSelector = simpleSelectors[this.currentSimpleSelectorIndex];
+    // if(currentSimpleSelector){
+    //   return [currentSimpleSelector]
+    // }else{
+    //   let nodes = this.declarationGenerators.map(gen => gen.getCurrentNodes())
+    //   let _nodes= flatten(nodes.filter(item => item))
+    //   return _nodes
+    // }
+  }
+  getSelectNodes = (isNeedSourceNode = false)=>{
     let simpleSelectors = this.selector.getChildren()
     let currentSimpleSelector = simpleSelectors[this.currentSimpleSelectorIndex];
     if(currentSimpleSelector){
+      if(isNeedSourceNode && this.matchSource){
+        if(!this.declarationGenerators.length && this.matchSource){
+          return [this.matchSource]
+        }else{
+          return []
+        }
+      }
       return [currentSimpleSelector]
     }else{
-      let nodes = this.declarationGenerators.map(gen => gen.getCurrentNodes())
+      let nodes = this.declarationGenerators.map(gen => gen.getCurrentNodes(isNeedSourceNode))
       let _nodes= flatten(nodes.filter(item => item))
       return _nodes
     }
+  }
+  getMatchSourceNode = ()=>{
+    return this.getSelectNodes(true)
   }
   clone = ()=>{
     const cloneInstance = new NodeSelectorGenerator(this.selector,this.declarations,this.parent,this.declartionsParent)
     cloneInstance.currentSimpleSelectorIndex = this.currentSimpleSelectorIndex
     cloneInstance.declarationGenerators = this.declarationGenerators.map(gen => gen.clone())
+    cloneInstance.matchSource = this.matchSource
     return cloneInstance
   }
 }
@@ -102,20 +125,21 @@ class NodeGenerator{
       return new NodeSelectorGenerator(selecotr,declarations,nodeUndefined,ruleSet)
     })
   }
-  private getNode = (simpleSelectorSource:Node)=>{
+  getNode = (simpleSelectorSource:Node)=>{
 
     console.log(this.currentRuleSet.getText(),'------target');
     console.log(simpleSelectorSource.getText(),'-----simple');
     return this.selectorGenerators = this.selectorGenerators.filter(gen=>{
-      return gen.findNodes(simpleSelectorSource)
+      return gen.getNode(simpleSelectorSource)
     })
   }
-  findNodes =(simpleSelectorSource:Node) =>{
-    return this.getNode(simpleSelectorSource)
-  }
-  getCurrentNodes = ():Node[]=>{
+  // findNodes =(simpleSelectorSource:Node) =>{
+  //   return this.getNode(simpleSelectorSource)
+  // }
+  getCurrentNodes = (isNeedSourceNode = false):Node[]=>{
     let nodes = this.selectorGenerators.map(gen =>{
-      return gen.getCurrentNodes()
+      return isNeedSourceNode ? gen.getMatchSourceNode() : gen.getCurrentNodes()
+      // return gen.getCurrentNodes()
     })
     let _nodes:Node[] = []
     let nodesFlatten =  flatten(nodes.filter(item => item))
@@ -136,6 +160,18 @@ class NodeGenerator{
 }
 
 
+function  getPlaceholderSpans(node: ts.TemplateExpression) {
+  const spans: Array<{ start: number, end: number }> = [];
+  const stringStart = node.getStart() + 1;
+
+  let nodeStart = node.head.end - stringStart - 2;
+  for (const child of node.templateSpans.map(x => x.literal)) {
+      const start = child.getStart() - stringStart + 1;
+      spans.push({ start: nodeStart, end: start });
+      nodeStart = child.getEnd() - stringStart - 2;
+  }
+  return spans;
+}''
 export class TemplateStringContext{
   constructor(
     readonly node: ts.TemplateLiteral,
@@ -147,7 +183,12 @@ export class TemplateStringContext{
     return this.node.getSourceFile().fileName
   }
   getText(){
-    return this.node.getText();
+    let text = this.node.getText().slice(1,-1);
+    if(this.node.kind == ts.SyntaxKind.NoSubstitutionTemplateLiteral){
+      return text
+    }
+    return substituter.getSubstitutions(text,getPlaceholderSpans(this.node))
+    // return this.node.getText();
   }
   getRawText(){
     return this.getText().slice(1,-1)
@@ -172,8 +213,8 @@ const amendStyleSheet = (text,tagName?:string)=>{
     startOffset = -1
   }
   if(tagName){
-    // text = `${tagName}{${text}}`
-    text = tagName+'{'+text+'}'
+    text = `${tagName}{${text}}`
+    // text = tagName+'{'+text+'}'
     startOffset += (tagName.length + 1)
   }
   let isExistRoot = !!text.slice(0,5).match(':root')
@@ -181,7 +222,8 @@ const amendStyleSheet = (text,tagName?:string)=>{
     startOffset += 6
   }
   return {
-    text: isExistRoot ? text : ':root{'+text+'}',
+    // text: isExistRoot ? text : ':root{'+text+'}',
+    text: isExistRoot ? text : `:root{${text}}`,
     startOffset,
   }
 }
@@ -233,7 +275,11 @@ class ScssService {
 
     let text = templateStringContext.getText();
     // let isExistRoot = !!text.slice(0,5).match(':root')
-    let tagName = getTag(templateStringContext.node)
+    let tagName = templateStringContext.tsHelp.getTag(templateStringContext.node)
+    if(!tagName){
+      console.log(tagName);
+      templateStringContext.tsHelp.getTag(templateStringContext.node)
+    }
     let {text:cssText,startOffset} = amendStyleSheet(text,tagName)
     let doc:CssTextDocument = {
       uri: 'untitled://embedded.scss',
@@ -326,19 +372,20 @@ class ScssService {
   /**
    *  匹配目标样式表最深层重叠部分
    */
-  findSelectorTreeBySelector(targetStyleSheet:Node, sourceStyleSheet:Node):any[]{
+  findSelectorTreeBySelector(targetStyleSheet:Node, sourceStyleSheet:Node,isNeedSourceSelector = false):any[]{
 
     let targetGenerator = new NodeGenerator(this.getRootRuleset(targetStyleSheet));
     let sourceRuleSet = this.getRootRuleset(sourceStyleSheet);
     const getNodes = (targetGenerator:NodeGenerator, sourceRuleSet:Nodes.RuleSet)=>{
       // let [ undefinedNode,declartionNode ]  = sourceRuleSet.getChildren()
-      let [ undefinedNode ]  = sourceRuleSet.getChildren()
-      let declartionNode = sourceRuleSet.getDeclarations()
-      let sourceSelectors = undefinedNode.getChildren()
-      let declarationRuleSets = this.getRulesetsOfDeclartions(declartionNode)
+      // let [ undefinedNode ]  = sourceRuleSet.getChildren()
+      let sourceDeclartionNode = sourceRuleSet.getDeclarations()
+      // let sourceSelectors = undefinedNode.getChildren()
+      let sourceSelectors = sourceRuleSet.getSelectors().getChildren();
+      let sourceDeclarationRuleSets = this.getRulesetsOfDeclartions(sourceDeclartionNode);
       const recursiveSelector = (targetGeneratorClone:NodeGenerator,selector:Node)=>{
         let simpleSelectors = selector.getChildren();
-        return !simpleSelectors.find(simpleSelector => targetGeneratorClone.findNodes(simpleSelector).length == 0)
+        return !simpleSelectors.find(simpleSelector => targetGeneratorClone.getNode(simpleSelector).length == 0)
       }
       let _selectors =  sourceSelectors.map(selector=>{
         let targetGeneratorClone = targetGenerator.clone()
@@ -346,13 +393,13 @@ class ScssService {
         if(!hasSelector){
           return undefined
         }
-        if(declarationRuleSets.length){
-          let result = declarationRuleSets.map(ruleSet=>{
+        if(sourceDeclarationRuleSets.length){
+          let result = sourceDeclarationRuleSets.map(ruleSet=>{
             return getNodes(targetGeneratorClone.clone(),ruleSet)
           }).filter(item => item)
           return flatten(result)
         }else{
-          return targetGeneratorClone.getCurrentNodes()
+          return targetGeneratorClone.getCurrentNodes(isNeedSourceSelector)
         }
       }).filter(item => item)
       return flatten(_selectors)

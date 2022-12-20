@@ -40,21 +40,29 @@ const testText5 = `
   }
 `
 const testText = `
-  div .shop .name,.shop.shop2{
-    color:red;
-    .name .name2{
-      .member{
-        
-      }
-    }
-    .name1{
+  .user{
+      .age{
 
-    }
+      }
   }
 `
+const test11 = `div,#testid,.member,.bbbb,.user1,.aaaa{.b123{}}`
+const test12 = `
+  .user,.user1,.b123{
+    color:red;
 
+    width: ${p=>p ? '100px':'110px'};
+    color: blue;
+  }
+  .b123{
+    color:red;
+  }
+`
 const testText9 = `
-  .member{
+  .user{
+    .age{}
+  }
+  .age{
 
   }
 `
@@ -101,15 +109,16 @@ const testText2 = `
 
 const scssService = getScssService();
 
-let styleSheet = scssLanguageService.parseStylesheet(testText)
-let styleSheet2 = scssLanguageService.parseStylesheet(testText3)
-
-let nodes= scssService.getCssSelectorNode(styleSheet);
-
-let node = nodes.children[0].children[1].children[0]
-console.log(node);
-
-scssService.findSelectorTreeBySelector(styleSheet,styleSheet2)
+let styleSheet = scssLanguageService.parseStylesheet(scssService.getDefaultCssTextDocument(test11))
+let styleSheet2 = scssLanguageService.parseStylesheet(scssService.getDefaultCssTextDocument(test12))
 
 
-extractStyleSheetSelectorWorkWrap(styleSheet as any,styleSheet.getText().indexOf('name1'))
+// let nodes= scssService.getCssSelectorNode(styleSheet);
+
+// let node = nodes.children[0].children[1].children[0]
+// console.log(node);
+
+scssService.findSelectorTreeBySelector(styleSheet,styleSheet2,true)
+
+
+// extractStyleSheetSelectorWorkWrap(styleSheet as any,styleSheet.getText().indexOf('name1'))

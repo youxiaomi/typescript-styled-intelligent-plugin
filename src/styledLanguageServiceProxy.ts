@@ -11,7 +11,7 @@ type LanguageServiceMethodWrapper<K extends keyof ts.LanguageService>
   = (delegate: ts.LanguageService[K], info?: ts.server.PluginCreateInfo) => ts.LanguageService[K];
 
 export default class StyledLanguageServiceProxy {
-  constructor( typescript: typeof ts, languageService: ts.LanguageService,  project: ts.server.Project,) {
+  constructor( typescript: typeof ts, languageService: ts.LanguageService,  project: ts.server.Project,info) {
     this.typescript = typescript
     this.languageService = languageService
     this.intercepts.getDefinitionAndBoundSpan = this.tryGetDefinitionAndBoundSpan
@@ -23,14 +23,17 @@ export default class StyledLanguageServiceProxy {
         log:()=>{}
       }
       )
+
+      this.info = info
   }
   languageService: ts.LanguageService
   helper: StandardTemplateSourceHelper
   typescript: typeof ts
   intercepts: Partial<{ [name in keyof ts.LanguageService]: LanguageServiceMethodWrapper<any> }> = {}
-
+  info:any
   private getDefinitionAndBoundSpan(fileName: string, position: number): ts.DefinitionInfoAndBoundSpan | undefined {
 
+    
     const tsHelp = new TsHelp(this.typescript, this.languageService);
 
     const cssSelectorParse = new CssSelectorParser(this.typescript, this.languageService, tsHelp);
@@ -43,7 +46,11 @@ export default class StyledLanguageServiceProxy {
     if(!context){
       return
     }
-    result = cssSelectorParse.getSelectorCandidateByCssNode(fileName,position);
+    try{
+      result = cssSelectorParse.getSelectorCandidateByCssNode(fileName,position);
+    }catch(e){
+      console.log(e);
+    }
     return result
   }
   private tryGetDefinitionAndBoundSpan = (delegate) => {
@@ -59,6 +66,7 @@ export default class StyledLanguageServiceProxy {
     }
   }
   start = (languageService: ts.LanguageService) => {
+    
 
     const intercept: Partial<ts.LanguageService> = Object.create(null);
     for (let name in this.intercepts) {

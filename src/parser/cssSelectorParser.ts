@@ -10,7 +10,7 @@ import { findResult, flatten, omitUndefined, unique } from '../utils/utils'
 import extractCssSelectorWorkWrap, { JsxElementNode,CandidateTextNode } from './extractCssSelector'
 import * as CssNode from 'vscode-css-languageservice/lib/umd/parser/cssNodes'
 import { extractStyleSheetSelectorWorkWrap } from './extractStyleSheet'
-import  { getTagVariableDeclarationNode, TemplateHelper } from '../utils/templateUtil'
+import  {  TemplateHelper } from '../utils/templateUtil'
 
 type StyledComponentNode = {
   type: 'styledElement',
@@ -86,7 +86,7 @@ export default class CssSelectorParser{
     }
     const workJsxAttribute = (node:ts.JsxAttribute)=>{
       let { name } = node
-      if(name.escapedText == 'className'){
+      if(name.escapedText == 'className' || name.escapedText == 'id'){
         return findStyledNode(node.parent)
       }
     }
@@ -136,7 +136,7 @@ export default class CssSelectorParser{
       }
     }
 
-    let _node = findStyledNode(node)
+    let _node = findStyledNode(node) || []
     let definitions = this.getSelectors(_node!, stringNode);
     if(!definitions.length){
       return undefined
@@ -256,12 +256,15 @@ export default class CssSelectorParser{
           let tsNode = parseCssSelectors[0].tsNode as ts.JsxElement
           let identiferName = this.tsHelp.getJsxOpeningElementIdentier(tsNode.openingElement)
           let styledDefintions =  this.tsHelp.getDefinitionLastNodeByIdentiferNode(identiferName!)
-          let { scssText = '',template } = this.tsHelp.getStyledTemplateScss(styledDefintions) || {}
+          let { scssText = '',template,TaggedTemplateNode } = this.tsHelp.getStyledTemplateScss(styledDefintions) || {}
           let context = new TemplateStringContext(template!,this.tsHelp)
           let doc = cssService.generateCssTextDocument(context)
           let currentStyledComponentStyleSheet = cssService.getScssStyleSheet(doc)
-          let cssNodes =  cssService.findSelectorTreeBySelector(currentStyledComponentStyleSheet,styleSheet);
-          cssNodes = unique(cssNodes,(pre,current)=>pre.offset == current.offset)
+          // let cssNodes =  cssService.findSelectorTreeBySelector(currentStyledComponentStyleSheet,styleSheet);
+          //这个地方得重新写
+          let cssNodes =  cssService.findSelectorTreeBySelector(styleSheet,currentStyledComponentStyleSheet,true);
+          cssNodes = unique(cssNodes,(pre,current)=>pre.offset == current.offset);
+          cssNodes = cssNodes.filter(item => item.getText().match(sourceSelector.getText().slice(1,-1)))
           let fileName = context.getFileName();
           const definitions: ts.DefinitionInfo[] = cssNodes.map(node=>{
             return {
@@ -306,8 +309,8 @@ export default class CssSelectorParser{
     let sourceFile = program?.getSourceFile(fileName);
     let cssService = getScssService()
    
-    let templateNode = this.tsHelp.findNode(sourceFile!,position)
-    // let templateNode2 = findNode(this.typescript, sourceFile!,position)
+    // let templateNode = this.tsHelp.findNode(sourceFile!,position)
+    let templateNode = this.tsHelp.getTemplateNode(sourceFile!,position)
     let templateStringContext = new TemplateStringContext(templateNode as ts.TemplateLiteral,this.tsHelp)
     let cssTextDocument = cssService.generateCssTextDocument(templateStringContext);
     let templateNodeStyleSheet = cssService.getScssStyleSheet(cssTextDocument);
@@ -316,7 +319,7 @@ export default class CssSelectorParser{
     const definitions: ts.DefinitionInfo[] = []
     // let matchStyleSheet = extractStyleSheetSelectorWorkWrap(templateNodeStyleSheet,position)
     console.log(templateNode);
-    let tagVariableDeclarationNode = getTagVariableDeclarationNode(templateNode)
+    let tagVariableDeclarationNode = this.tsHelp.getTagVariableDeclarationNode(templateNode)
 
     if(tagVariableDeclarationNode){
       let referenceNodes = omitUndefined(this.tsHelp.getReferenceNodes(fileName, tagVariableDeclarationNode.pos));
@@ -330,9 +333,10 @@ export default class CssSelectorParser{
             let cssScan = cssService.getStyleSheetScanByJsxElementNode(cssSelectorDomNode);
             let cssText = cssScan.getText()
             let cssdoc = cssService.getDefaultCssTextDocument(cssText)
-            let styleSheet = cssService.getScssStyleSheet(cssdoc)
-            // let result = cssService.findSelectorTreeBySelector(targetStyleSheet!,styleSheet)
-            let result = cssService.findSelectorTreeBySelector(styleSheet!, targetStyleSheet!)
+            let styleSheet = cssService.getScssStyleSheet(cssdoc);
+
+            let result = cssService.findSelectorTreeBySelector(targetStyleSheet!,styleSheet)
+            // let result = cssService.findSelectorTreeBySelector(styleSheet!, targetStyleSheet!)
             result.forEach(res => {
               let textNode = cssScan.getTextNode(cssdoc.getOffsetInFile(res.offset))
               if (textNode?.node.type == 'selectorNode' || textNode?.node.type == "textNode") {
@@ -382,19 +386,6 @@ export function findNode(
   }
   return find(sourceFile);
 }
-
-class CandidateSelector {
-  constructor(cssNode: CssNode.Node, templateNode: ts.TemplateLiteral ){
-    this.cssNode = cssNode
-    this.templateNode = templateNode
-  }
-  cssNode: CssNode.Node
-  templateNode : ts.TemplateLiteral
-  
-
-
-}
-
 
 // containerKind:
 // undefined

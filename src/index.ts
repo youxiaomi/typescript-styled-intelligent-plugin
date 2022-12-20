@@ -359,8 +359,7 @@ function init(modules: { typescript: typeof import("typescript/lib/tsserverlibra
     const ts = modules.typescript;
   
     function create(info: ts.server.PluginCreateInfo) {
-
-      return new StyledLanguageServiceProxy( modules.typescript,info.languageService,info.project,).start(info.languageService)
+      return new StyledLanguageServiceProxy( modules.typescript,info.languageService,info.project,info).start(info.languageService)
 
       return decorateWithTemplateLanguageService(
         modules.typescript,

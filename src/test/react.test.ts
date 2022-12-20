@@ -73,9 +73,9 @@ const test = () => {
 
   let res = cssSelectorParser.parseCssSelector(referenceNode[0] as ts.JsxElement)
   // console.log(res);
+  console.log('123')
 
   cssSelectorParser.getStyledComponentNode(testFiles.fileName, testFiles?.getFullText().indexOf('user1'))
-
 }
 // test()
 
