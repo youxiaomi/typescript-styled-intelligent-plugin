@@ -4,7 +4,8 @@ import { describe ,suite} from "mocha"
 import * as assert from "assert"
 import { getScssService } from "../service/cssService"
 import { extractStyleSheetSelectorWorkWrap } from "../parser/extractStyleSheet"
-import { getSCSSLanguageService ,TextDocument,} from 'vscode-css-languageservice'
+import { getSCSSLanguageService ,TextDocument, getCSSLanguageService} from 'vscode-css-languageservice'
+import { createStyleSheetAbstractSyntaxTree } from "../factory/nodeFactory"
 const scssLanguageService = getSCSSLanguageService()
 
 
@@ -102,6 +103,64 @@ const testText2 = `
     }
   }
 `
+// bb =styleSheet.getChildren()[0].getChildren()[1].getChildren()[0].getChildren()[1].getChildren()[0].getSelectors().getChildren()[0]
+// cc = bb.getChildren()[0].getChildren()[0]
+const cssSelector1 = `
+  >a{
+    .user1.user11 .user22.user2,user4{
+      .user3 .user4{}
+      &.user3{
+
+      }
+    }
+    .user,.user1>.user2 .user4.user5{
+      .user3+.user4{}
+    }
+    .user1.user5>.user2{
+
+    }
+    .user1>.user2{}
+    .user1 .user3 .user2{}
+      
+    .user.user2,.user1 .member{
+      &.member2{
+      
+      }
+      .age{
+        .age2{
+
+        }
+      }
+    }
+  }
+`
+const cssSelector = `
+  .user .user2.user5{
+    .user5{
+
+    }
+    .user6{
+
+    }
+  }
+
+`
+
+const domSelector = `
+  .user .user2{
+    &.user5{
+
+    }
+  }
+`
+
+const cssSelectorEmit = `
+  .user{
+    .age{
+      
+    }
+  }
+`
 
 // var aa = <div class='shop'>
 //   <div class='.age'></div>
@@ -109,8 +168,20 @@ const testText2 = `
 
 const scssService = getScssService();
 
-let styleSheet = scssLanguageService.parseStylesheet(scssService.getDefaultCssTextDocument(test11))
-let styleSheet2 = scssLanguageService.parseStylesheet(scssService.getDefaultCssTextDocument(test12))
+let styleSheet = scssLanguageService.parseStylesheet(scssService.getDefaultCssTextDocument(cssSelector))
+let styleSheet2 = scssLanguageService.parseStylesheet(scssService.getDefaultCssTextDocument(domSelector))
+console.log(styleSheet);
+createStyleSheetAbstractSyntaxTree(styleSheet as any)
+
+let matchs = scssService.matchCssSelectorNodes(
+createStyleSheetAbstractSyntaxTree(styleSheet as any),
+createStyleSheetAbstractSyntaxTree(styleSheet2 as any),
+)
+console.log(matchs);
+console.log(matchs);
+
+
+// let styleSheet2 = scssLanguageService.parseStylesheet(scssService.getDefaultCssTextDocument(test12))
 
 
 // let nodes= scssService.getCssSelectorNode(styleSheet);
@@ -118,7 +189,7 @@ let styleSheet2 = scssLanguageService.parseStylesheet(scssService.getDefaultCssT
 // let node = nodes.children[0].children[1].children[0]
 // console.log(node);
 
-scssService.findSelectorTreeBySelector(styleSheet,styleSheet2,true)
+// scssService.findSelectorTreeBySelector(styleSheet!,styleSheet2,true)
 
 
 // extractStyleSheetSelectorWorkWrap(styleSheet as any,styleSheet.getText().indexOf('name1'))

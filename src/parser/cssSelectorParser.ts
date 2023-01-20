@@ -11,6 +11,7 @@ import extractCssSelectorWorkWrap, { JsxElementNode,CandidateTextNode } from './
 import * as CssNode from 'vscode-css-languageservice/lib/umd/parser/cssNodes'
 import { extractStyleSheetSelectorWorkWrap } from './extractStyleSheet'
 import  {  TemplateHelper } from '../utils/templateUtil'
+import { createStyleSheetAbstractSyntaxTree } from '../factory/nodeFactory'
 
 type StyledComponentNode = {
   type: 'styledElement',
@@ -65,11 +66,12 @@ export default class CssSelectorParser{
     if(!node){
       return 
     }
+    //todo TemplateHead
     if(node.kind != ts.SyntaxKind.StringLiteral){
       return
     }
     let stringNode = node as ts.StringLiteral
-
+    // let selectors = stringNode.getText().split(' ').map(item => item.trim())
     node = node.parent
 
     const workVariableDeclarationwork = (node:ts.VariableDeclaration)=>{
@@ -80,6 +82,7 @@ export default class CssSelectorParser{
       let result = stringNodeReferences.map(referenceNode=>{
         return findStyledNode(referenceNode!)
       }).filter(item => item) as StyledComponentNode[][]
+      
       return unique(flatten(result),(pre,current)=>{
         return pre.tsNode == current.tsNode
       })
@@ -136,8 +139,8 @@ export default class CssSelectorParser{
       }
     }
 
-    let _node = findStyledNode(node) || []
-    let definitions = this.getSelectors(_node!, stringNode);
+    let styledComponentNode = findStyledNode(node) || []
+    let definitions = this.getSelectors(styledComponentNode!, stringNode);
     if(!definitions.length){
       return undefined
     }
@@ -209,35 +212,6 @@ export default class CssSelectorParser{
       return node.type == 'styledElement' || node.type == 'intrinsicElements'
     }
     console.log(styledComponentNode);
-    const findCandidateSelector = (parseCssSelectors):CandidateTextNode[]  => {
-      let result: CandidateTextNode[] = []
-      const matchNode = (parseCssSelectors: JsxElementNode[]) => {
-        parseCssSelectors.forEach(cssSelector => {
-          if (cssSelector.type == "styledElement" || cssSelector.type == "intrinsicElements") {
-            let { selectors = [], children = [] } = cssSelector
-            selectors.forEach(selector => {
-              let { type, selectorType, children = [] } = selector
-              console.log(selector);
-              children.forEach(selectorNode => {
-                console.log(selectorNode.text || selectorNode.tsNode.getText());
-                console.log(sourceSelector.text);
-                const isSame = (selectorNode, sourceSelector) => {
-                  return selectorNode.tsNode == sourceSelector
-                }
-                if (isSame(selectorNode, sourceSelector)) {
-                  console.log(selectorNode);
-                  result.push(selectorNode)
-                }
-              })
-            })
-            return matchNode(children)
-          }
-        })
-      }
-      matchNode(parseCssSelectors)
-      return result
-    }
-
     const getCandidateSelector = (node:StyledComponentNode)=>{
       let result: ts.DefinitionInfo[] = []
 
@@ -262,7 +236,12 @@ export default class CssSelectorParser{
           let currentStyledComponentStyleSheet = cssService.getScssStyleSheet(doc)
           // let cssNodes =  cssService.findSelectorTreeBySelector(currentStyledComponentStyleSheet,styleSheet);
           //这个地方得重新写
-          let cssNodes =  cssService.findSelectorTreeBySelector(styleSheet,currentStyledComponentStyleSheet,true);
+          // let cssNodes =  cssService.findSelectorTreeBySelector(styleSheet,currentStyledComponentStyleSheet,true);
+          let targetTree = createStyleSheetAbstractSyntaxTree(currentStyledComponentStyleSheet)
+          let sourceTree = createStyleSheetAbstractSyntaxTree(styleSheet)
+
+          const  { matchSourceNodes,matchTargetNodes } =  cssService.matchCssSelectorNodes(targetTree,sourceTree);
+          let cssNodes = Array.from(matchTargetNodes).map(item => item.node)
           cssNodes = unique(cssNodes,(pre,current)=>pre.offset == current.offset);
           cssNodes = cssNodes.filter(item => item.getText().match(sourceSelector.getText().slice(1,-1)))
           let fileName = context.getFileName();
@@ -335,8 +314,13 @@ export default class CssSelectorParser{
             let cssdoc = cssService.getDefaultCssTextDocument(cssText)
             let styleSheet = cssService.getScssStyleSheet(cssdoc);
 
-            let result = cssService.findSelectorTreeBySelector(targetStyleSheet!,styleSheet)
-            // let result = cssService.findSelectorTreeBySelector(styleSheet!, targetStyleSheet!)
+            let result = cssService.findSelectorTreeBySelector(targetStyleSheet!,styleSheet) 
+            //  还存在子级，就匹配不上
+            // let result = cssService. findSelectorTreeBySelector(styleSheet!, targetStyleSheet!)
+            let targetTree = createStyleSheetAbstractSyntaxTree(targetStyleSheet!)
+            let sourceTree = createStyleSheetAbstractSyntaxTree(styleSheet)
+            let {matchSourceNodes,matchTargetNodes} = cssService.matchCssSelectorNodes(targetTree,sourceTree,true)
+            result = Array.from(matchSourceNodes).map(item => item.node)
             result.forEach(res => {
               let textNode = cssScan.getTextNode(cssdoc.getOffsetInFile(res.offset))
               if (textNode?.node.type == 'selectorNode' || textNode?.node.type == "textNode") {
@@ -372,6 +356,8 @@ export default class CssSelectorParser{
 
 
   }
+
+
 
 }
 export function findNode(

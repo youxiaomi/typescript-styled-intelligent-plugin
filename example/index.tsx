@@ -11,19 +11,20 @@ const getAge = ()=>{
 }
 var User = styled.div`
   .user{
-    
-  }
-  #testid{
     .user1{
 
     }
   }
-  .member{
-    .user1{
+  .user{
+    &.user2.user3{
 
     }
-  }
+    .user1{
+        #user5{
 
+        }
+    }
+  }
 `
 
 var roots = {
@@ -67,22 +68,31 @@ var ShowMemeber = (props:any)=>{
 }
 
 var u:string = 'user1'
+var getAA = ()=>{
+  return 'user8'
+}
 const AA = () => {
 
   return <div>
-    <User className={`user ${u}`}>
-      {/* <ShowMemeber>
-
-      </ShowMemeber>
-      { ShowMemeber({}) } */}
-      <div id='testid' className='name'>
-        <div className='user1'>
-
+    <User className={`user2 ${u} user9 ${getAA()}`}>
+    
+      <div  className='user'>
+        
+      </div>
+      <div  className='user user3'>
+        <div className={ '' }></div>
+        <div className={'   user1     user3 '}>
+          <div id='user5'></div>
         </div>
         tom
       </div>
-      <div className='name'>tom</div>
-      <div className='age'>age</div>
+        {/* <ShowMemeber>
+
+      </ShowMemeber>
+      { ShowMemeber({}) } */}
+      {/* <div id='testid' className='user'> */}
+      {/* <div className='name'>tom</div>
+      <div className='age'>age</div> */}
     </User>
     {/* <div>
 

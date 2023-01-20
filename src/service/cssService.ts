@@ -10,13 +10,15 @@ import * as substituter from 'typescript-styled-plugin/lib/_substituter'
 import TsHelp from './tsHelp'
 
 import StyleSheetScan from '../parser/styleSheetScan'
+import { CssSelectorNode } from '../factory/nodeFactory'
+import { isReadable } from 'stream'
 
 const scssLanguageService = getSCSSLanguageService()
 
 
 
 
-
+//iterator
 class NodeSelectorGenerator{
   currentSimpleSelectorIndex = -1
   selector:Node
@@ -110,6 +112,7 @@ class NodeSelectorGenerator{
     return cloneInstance
   }
 }
+//iterator
 class NodeGenerator{
   currentRuleSet:Node
   // currentSelectorIndex = 0
@@ -171,7 +174,7 @@ function  getPlaceholderSpans(node: ts.TemplateExpression) {
       nodeStart = child.getEnd() - stringStart - 2;
   }
   return spans;
-}''
+}
 export class TemplateStringContext{
   constructor(
     readonly node: ts.TemplateLiteral,
@@ -553,7 +556,73 @@ class ScssService {
     return styleSheetNodeScan
     // return generateSelectorNode(node,sourceSelectorNode)
   }
-  
+  matchCssSelectorNodes(targeTree: CssSelectorNode,sourceTree: CssSelectorNode,isMatchTarge = false){
+    let matchSourceNodes: Set<CssSelectorNode> = new Set()
+    let matchTargetNodes: Set<CssSelectorNode> = new Set()
+    iterationNode(targeTree, sourceTree)
+    return {
+      matchSourceNodes,
+      matchTargetNodes,
+    }
+    function iterationNode(targetNode: CssSelectorNode, sourceNode: CssSelectorNode) {
+      // while(sourceNode){
+
+      let isSame = isSameNode(targetNode, sourceNode)
+      if (isSame) {
+        let isCombinator = sourceNode.combinatorSibling || sourceNode.combinatorParent || targetNode.combinatorParent || targetNode.combinatorSibling
+        if (isCombinator && targetNode.parent && sourceNode.parent) {
+          isSame = isSameNode(targetNode.parent, sourceNode.parent)
+        }
+      }
+      let targetChildren = targetNode.children
+      let sourceChildren = sourceNode.children
+      if (isSame) {
+        if (targetChildren.size && sourceChildren.size) {
+          sourceChildren.forEach(sourceChild => {
+            targetChildren.forEach(targetChild => {
+              iterationNode(targetChild, sourceChild)
+            })
+          })
+        } else {
+          // targetNode.addMatchNode(sourceNode)
+          // sourceNode.addMatchNode(targetNode)
+          if(isMatchTarge){
+            if(!targetChildren.size){
+              matchSourceNodes.add(sourceNode)
+            }
+          }else{
+            matchSourceNodes.add(sourceNode)
+          }
+          matchTargetNodes.add(targetNode)
+        }
+      } else {
+        sourceChildren.size && sourceChildren.forEach(sourceChild => {
+          iterationNode(targetNode, sourceChild)
+        })
+      }
+      function isSameNode(targetNode: CssSelectorNode, sourceNode: CssSelectorNode) {
+        let sourceCssNode = sourceNode.node
+        let targetCssNode = targetNode.node
+        let isSame = targetCssNode.type == sourceCssNode.type && sourceNode.nodeText == targetNode.nodeText
+        if (isSame && (targetNode.siblings.size || sourceNode.siblings.size)) {
+          if (targetNode.siblings.size != sourceNode.siblings.size) {
+            isSame = false
+          } else {
+            let targetSiblings = Array.from(targetNode.siblings)
+            for (let sibling of sourceNode.siblings) {
+              let notFound = !targetSiblings.find(targetSibling => targetSibling.nodeText == sibling.nodeText)
+              if (notFound) {
+                isSame = false
+                break
+              }
+            }
+          }
+        }
+        return isSame
+      }
+    }
+
+  }
 }
 
 export const getScssService = ()=>{
