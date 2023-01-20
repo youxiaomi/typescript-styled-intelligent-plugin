@@ -13,7 +13,7 @@ import { extractStyleSheetSelectorWorkWrap } from './extractStyleSheet'
 import  {  TemplateHelper } from '../utils/templateUtil'
 import { createStyleSheetAbstractSyntaxTree } from '../factory/nodeFactory'
 
-type StyledComponentNode = {
+export type StyledComponentNode = {
   type: 'styledElement',
   tsNode: ts.Node,
   scssText: string,
@@ -66,10 +66,11 @@ export default class CssSelectorParser{
     if(!node){
       return 
     }
-    //todo TemplateHead
+    //todo TemplateHead   LastTemplateToken
     if(node.kind != ts.SyntaxKind.StringLiteral){
       return
     }
+    
     let stringNode = node as ts.StringLiteral
     // let selectors = stringNode.getText().split(' ').map(item => item.trim())
     node = node.parent
