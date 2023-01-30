@@ -1,5 +1,5 @@
 
-
+import * as ts from 'typescript';
 
 
 export const flatten = <T>(array: T[][],options:{deep?:boolean  } = {}):T[] => {
@@ -60,6 +60,4 @@ export const omitUndefined = <T>(array:T[]):OmitUndefined<T>[]=>{
 
 type ToArray<Type> = Type extends object ? Type[] : never;
 type StrArrOrNumArr = ToArray<string|{a:string}>;
-
-
 

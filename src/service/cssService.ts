@@ -10,7 +10,7 @@ import * as substituter from 'typescript-styled-plugin/lib/_substituter'
 import TsHelp from './tsHelp'
 
 import StyleSheetScan from '../parser/styleSheetScan'
-import { CssSelectorNode } from '../factory/nodeFactory'
+import { CssSelectorNode, TargetSelector } from '../factory/nodeFactory'
 import { isReadable } from 'stream'
 
 const scssLanguageService = getSCSSLanguageService()
@@ -457,7 +457,7 @@ class ScssService {
   /**
    *  把dom节点选中的selector 转换为styleSheet，没有selector就转换所有子节点
    */
-  getStyleSheetScanByJsxElementNode = (node:JsxElementNode,sourceSelectorNode?: ts.Node)=>{
+  getStyleSheetScanByJsxElementNode = (node:JsxElementNode,targetSelector?: TargetSelector)=>{
     /**
      *  root:{
      *    .a{
@@ -500,25 +500,28 @@ class ScssService {
       }
       return []
     }
-    const generateSelectorNode = (node:JsxElementNode,sourceSelectorNode?: ts.Node) =>{
+    const generateSelectorNode = (node:JsxElementNode,targetSelector?: TargetSelector) =>{
       if(node.type == 'styledElement' || node.type == 'intrinsicElements'){
         const { type ,children = []}  = node
         let selectors = node.selectors
-        if(sourceSelectorNode){
+        if(targetSelector){
           let _selectorsResult = node.selectors.map(selector=>{
             console.log(selector.tsNode.getFullText());
             
             if(selector.selectorType == 'className' || selector.selectorType == 'id'){
-              let child = (selector.children || []).find(item => item.tsNode == sourceSelectorNode);
+              let child = (selector.children || []).find(item => {
+                return item.offset <= targetSelector.selectorStart && item.offset + item.text.length >= targetSelector.selectorStart
+                // return item.tsNode == sourceSelectorNode
+              });
               let _selector = {...selector}
               if(child){
                 _selector.children = [child]
                 return _selector
               }
             }
-            if(selector.tsNode == sourceSelectorNode){
-              return selector
-            }
+            // if(selector.tsNode == sourceSelectorNode){ //element selector
+            //   return selector
+            // }
           })
           let _selectors = omitUndefined(_selectorsResult)
           if(_selectors.length){
@@ -532,15 +535,15 @@ class ScssService {
         }
         // 多class可以并集，生成  .user.age
 
-        let selectorResults = selectors.map(generateSelectorText)
+        selectors.map(generateSelectorText)
         if(selectors.length){
           styleSheetNodeScan.setText('{',{type:'braceOpen'})
         }
         // let selectorStrings = flatten(selectorResults).join(',')
         let isExist = false
         for(let node of children){
-          isExist = generateSelectorNode(node,sourceSelectorNode) || false
-          if(sourceSelectorNode && isExist){
+          isExist = generateSelectorNode(node,targetSelector) || false
+          if(targetSelector && isExist){
             break
           }
         }
@@ -552,7 +555,7 @@ class ScssService {
         // return `${selectorStrings}{${childrenSelectors}}`
       }
     }
-    generateSelectorNode(node,sourceSelectorNode)
+    generateSelectorNode(node,targetSelector)
     return styleSheetNodeScan
     // return generateSelectorNode(node,sourceSelectorNode)
   }
@@ -621,7 +624,6 @@ class ScssService {
         return isSame
       }
     }
-
   }
 }
 

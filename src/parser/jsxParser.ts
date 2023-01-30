@@ -9,133 +9,137 @@ import { findResult, flatten, omitUndefined, unique } from '../utils/utils'
 
 
 export class JsxParser extends AbstractParser{
-
-
-
-  // iterateParentNode(node:ts.Node):StyledComponentNode[]|undefined{
-
-  // }
-  findJsxOpeningElementOfParent(){
-
+  constructor(typescript: Ts,languageService: ts.LanguageService,tsHelp: TsHelp){
+    super(typescript,languageService,tsHelp);
+    this.iterateParentParser = new IterateParentParser(this.typescript,this.languageService,this.tsHelp)
+  }
+  iterateParentParser: IterateParentParser
+  findJsxOpeningElementOfParent(node:ts.Node,fileName:string){
+    return this.iterateParentParser.findStyledElement(node,fileName)
   }
   findJsxClassAttrOfParent(){
 
   }
-  findStyledNodeOfParent(){
-
-
+  findStyledNodeOfParent(node,fileName){
+    return this.iterateParentParser.findStyledElement(node,fileName)
   }
 
 
 }
 
+  
+export type ParentReferenceNode = ({type: 'styledElement',referenceNode:ts.Node} | {type: 'variableReference'|'className'|'id'|'node'}) &  { tsNode: ts.Node ,fileName:string };
+
 class IterateParentParser extends AbstractParser{
   fileName = ''
-
   init(fileName:string){
     this.fileName = fileName
   }
-  workVariableDeclarationwork = (node:ts.VariableDeclaration)=>{
-    const findStyledNode = this.findStyledNode
-    let stringReferences = this.tsHelp.getReferences(fileName,node.getStart());
-    let stringNodeReferences = stringReferences.map(reference=>{
-      return this.tsHelp.findNode(sourceFile!,reference.textSpan.start)
-    })
-    let result = stringNodeReferences.map(referenceNode=>{
-      return findStyledNode(referenceNode!)
-    }).filter(item => item) as StyledComponentNode[][]
-    
-    return unique(flatten(result),(pre,current)=>{
-      return pre.tsNode == current.tsNode
-    })
-  }
-  workJsxAttribute = (node:ts.JsxAttribute)=>{
-    const findStyledNode = this.findStyledNode
-    let { name } = node
-    if(name.escapedText == 'className' || name.escapedText == 'id'){
-      return findStyledNode(node.parent)
-    }
-  }
-  workJsxOpeningElement = (node:ts.JsxOpeningElement):StyledComponentNode[] | undefined=>{
-    const findStyledNode = this.findStyledNode
-    let identifier = this.tsHelp.getJsxOpeningElementIdentier(node);
-    if(identifier){
-      let definitions = this.tsHelp.getDefinition(fileName,identifier.pos);
-      let isCustomeJsxElement = definitions.find(node=>this.tsHelp.isCustomJsxElement(node))
-      if(isCustomeJsxElement){
-        let referenceNodes = this.tsHelp.getReferenceNodes(fileName,identifier.pos) as  ts.Node[]
-        let {scssText} = findResult(referenceNodes,this.tsHelp.getStyledTemplateScss) || {}
-        if(scssText){
-          return [
-            {
-              type: 'styledElement',
-              scssText: scssText,
-              tsNode: node.parent,
-              parent: node.parent && node.parent.parent && findStyledNode(node.parent.parent) || []
-            }
-          ]
-        }else{
-          return node.parent && node.parent.parent && findStyledNode(node.parent.parent) || undefined
-        }
-      }else{
-        return node.parent && node.parent.parent && findStyledNode(node.parent.parent) || undefined
-      }
-    }
-  }
-  findStyledNode = (node:ts.Node):StyledComponentNode[]|undefined=>{
-    console.log(ts.SyntaxKind[node.kind],node.getFullText());
+  findReferencesNodes(node:ts.Node,fileName:string):ParentReferenceNode[]{
+
     switch(node.kind){
       case ts.SyntaxKind.VariableDeclaration:
-        return this.workVariableDeclarationwork(node as ts.VariableDeclaration);
+        return this.findVariableDeclarationParent(node as ts.VariableDeclaration,fileName);
       case ts.SyntaxKind.JsxAttribute:
-        return this.workJsxAttribute(node as ts.JsxAttribute);
-      case ts.SyntaxKind.JsxOpeningElement:
-        return this.workJsxOpeningElement(node as ts.JsxOpeningElement)
+        return this.findJsxAttr(node as ts.JsxAttribute,fileName);
+      // case ts.SyntaxKind.JsxOpeningElement:
+      //   return this.findJsxOpeningElement(node as ts.JsxOpeningElement,fileName)
       case ts.SyntaxKind.JsxElement:
-        return this.workJsxOpeningElement((node as ts.JsxElement).openingElement)
+        return this.findJsxOpeningElement((node as ts.JsxElement),fileName)
       case ts.SyntaxKind.JsxClosingElement:
-        return undefined
+        return []
       default:
-        return this.findStyledNode(node.parent)
+        return this.findReferencesNodes(node.parent,fileName)
     }
   }
-  findParentNode(node:ts.Node,type: 'jsxClassAttr'|'openingElement'|'styledJsxElement'){
-    const typeMap = {
-      jsxClassAttr: (node)=>{
-        return true
-      },
-      openingElement:(node)=>{
-        return true
-      },
-      styledJsxElement:(node)=>{
-        return true
+  findVariableDeclarationParent(node:ts.VariableDeclaration,fileName:string, ){
+    const sourceFile = this.programe.getSourceFile(fileName)
+    // this.languageService. 
+    let references = this.tsHelp.getReferences(fileName,node.getStart());
+    let parentReferenceNodes: ParentReferenceNode[] = []
+    references.forEach((reference=>{
+      let node =  this.tsHelp.findNode(sourceFile!,reference.textSpan.start)
+      if(node){
+        // let referenceNode = this.findReferencesNodes(node,fileName)
+        // parentReferenceNodes = parentReferenceNodes.concat(referenceNode)
+        parentReferenceNodes.push({
+          type: 'variableReference',
+          tsNode: node,
+          fileName: reference.fileName
+        })
       }
-    }
-    let currentHandler = typeMap[type]
-
-    while(node && !currentHandler(node)){
-      switch(node.kind){
-        case ts.SyntaxKind.VariableDeclaration:
-          return this.workVariableDeclarationwork(node as ts.VariableDeclaration);
-        case ts.SyntaxKind.JsxAttribute:
-          return this.workJsxAttribute(node as ts.JsxAttribute);
-        case ts.SyntaxKind.JsxOpeningElement:
-          return this.workJsxOpeningElement(node as ts.JsxOpeningElement)
-        case ts.SyntaxKind.JsxElement:
-          return this.workJsxOpeningElement((node as ts.JsxElement).openingElement)
-        case ts.SyntaxKind.JsxClosingElement:
-          return undefined
-        default:
-          return this.findStyledNode(node.parent)
-      }
-    }
+    }));
+    return parentReferenceNodes
+    // let nodes = this.tsHelp.getReferenceNodes(fileName, node.getStart());
+    // return nodes.map(node=>{
+    //   return {
+    //     type: 'variableReference',
+    //     tsNode: node,
+    //     fileName: fileName
+    //   }
+    // })
   }
-  findVariableDeclarationParent(node:ts.VariableDeclaration){
-    this.programe.getSourceFile
-    this.languageService.
-    let references = this.tsHelp.getReferenceNodes(node)
+  findParentNodes(node,fileName, type: ParentReferenceNode['type'] ,isAllParent = false){
+    let parentReferenceNodes:ParentReferenceNode[] = []
+    let nodes:ParentReferenceNode[] = [{fileName,tsNode: node, type:'node'}];
+    while(nodes.length){
+      let currentNode = nodes.shift()
+      if(currentNode){
+        if(currentNode.type == type){
+          parentReferenceNodes.push(currentNode)
+          if(isAllParent){
+            nodes = nodes.concat(this.findReferencesNodes(currentNode.tsNode.parent,currentNode.fileName))
+          }
+        }else{
+          let referenceNodes = this.findReferencesNodes(currentNode.tsNode.parent,currentNode.fileName)
+          nodes = nodes.concat(referenceNodes)
+        }
+      }
+    }
+    return parentReferenceNodes
+  }
+  findStyledElement(node,fileName,isAllParent = false){
+    return this.findParentNodes(node,fileName,'styledElement')
+  }
+  findAllStyledElement(){
 
+  }
+  findJsxAttr(node:ts.JsxAttribute,fileName):ParentReferenceNode[]{
+    let { name } = node
+    if(['className','id'].includes(name.escapedText.toString())){
+      return [{
+        type: name.escapedText.toString() == 'id' ? 'id' : 'className',
+        fileName: fileName,
+        tsNode: node
+      }]
+    }
+    return []
+  }
+  findJsxClassName(node){
+    
+  }
+  findJsxId(node){
 
+  }
+  findJsxOpeningElement(jsxNode: ts.JsxElement,fileName):ParentReferenceNode[]{
+    let node = jsxNode.openingElement
+    let identifier = this.tsHelp.getJsxOpeningElementIdentier(node);
+    //default first
+    let definition = this.tsHelp.getDefinition(fileName,identifier.pos)[0];
+    if(this.tsHelp.isCustomJsxElement(definition)){
+      let node = this.tsHelp.getReferenceNodes(fileName,identifier.pos)[0] as  ts.Node
+      let {sassText} = this.tsHelp.getStyledTemplateScss(node) || {}
+      if(sassText){
+        return [{
+          type: 'styledElement',
+          // sassText: sassText,
+          fileName: fileName,
+          tsNode: jsxNode,
+          referenceNode: node
+        }]
+      }
+    }
+    return [{type:'node',fileName,tsNode: jsxNode}]
   }
 
 

@@ -54,7 +54,8 @@ export default class TsHelp {
   getReferenceNodes(fileName:string,pos: number,noSelf:boolean = true){
     let references = this.getReferences(fileName,pos);
     let program = this.languageService.getProgram()
-    let referenceNodes = references?.map(reference => {
+    let referenceNodes:ts.Node[] = []
+    references?.forEach(reference => {
 
       let sourceFile = program?.getSourceFile(reference.fileName)
       if (sourceFile) {
@@ -63,11 +64,17 @@ export default class TsHelp {
         }
         let start = reference.contextSpan?.start || 0
         let end  = ( reference.contextSpan?.start || 0 )+ (reference.contextSpan?.length || 0 )
-        return this.findNodeByRange(sourceFile,start, end)
+        const  node = this.findNodeByRange(sourceFile,start, end)
+        if(node){
+          referenceNodes.push(node)
+        }
+        return node
       } else {
         return undefined
       }
     })
+
+
     
     referenceNodes = referenceNodes.filter(reference => {
       if(!reference){
@@ -121,7 +128,7 @@ export default class TsHelp {
   isStyledComponentElement = (defineNode:ts.DefinitionInfo)=>{
     return defineNode.containerName === containerNames.StyledComponentBase
   }
-  getStyledTemplateScss = (node:ts.Node):{scssText:string,TaggedTemplateNode:ts.TaggedTemplateExpression,template: ts.TemplateLiteral}|undefined=>{
+  getStyledTemplateScss = (node:ts.Node):{sassText:string,TaggedTemplateNode:ts.TaggedTemplateExpression,template: ts.TemplateLiteral}|undefined=>{
     if(node.kind == ts.SyntaxKind.FirstStatement){
       let _node = node as ts.VariableStatement
       let { declarationList } = _node
@@ -139,19 +146,19 @@ export default class TsHelp {
         }
       })
       return {
-        scssText: scssText,
+        sassText: scssText,
         TaggedTemplateNode,
         template: template,
       }
     }
   }
 
-  getJsxOpeningElementIdentier = (openingElement: ts.JsxOpeningElement)=>{
+  getJsxOpeningElementIdentier = (openingElement: ts.JsxOpeningElement) =>{
     return  ts.forEachChild(openingElement,(node)=>{
       if(node.kind == ts.SyntaxKind.Identifier){
         return node
       }
-    });
+    }) as  ts.Node;
   }
   getTag = (node: ts.Node)=>{
     switch(node.kind){
@@ -210,7 +217,7 @@ export default class TsHelp {
       }
       return node
     }
-    return getTemplateNode(node)
+    return getTemplateNode(node!)
   }
 }
 

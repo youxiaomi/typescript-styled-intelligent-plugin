@@ -2,6 +2,7 @@
 
 import ts from 'typescript'
 import * as CssNode from 'vscode-css-languageservice/lib/umd/parser/cssNodes'
+import { getSelectorTextInfo } from '../utils/utils'
 const { NodeType}  = CssNode
 
 
@@ -183,12 +184,6 @@ export function createStyleSheetAbstractSyntaxTree(cssNode: CssNode.Node){
         parent?.parent?.addChild(node)
       })
     }else{
-      // if(prevNode instanceof CssSelectorNode){
-      //   prevNode?.addSibling(node)
-      // }
-      if(!parents.forEach){
-        debugger
-      }
       parents.forEach(parent=>{
         if(!parent || !parent.addChild){
           debugger
@@ -327,20 +322,11 @@ export function createStyleSheetAbstractSyntaxTree(cssNode: CssNode.Node){
 }
 
 
+class  Selector{
 
-
-
-
-class DomSelector {
-
-  selector: string = ''
-  offset = 0
-  parenJsxAttrNode
-  constructor(offset:number,parentJsxAttrNode: ts.Node){
-    this.offset = offset
-    this.parenJsxAttrNode = parentJsxAttrNode
+  constructor(readonly parent: ts.Node,readonly offset:number,readonly text:string){
+    
   }
-
 
 
 
@@ -348,24 +334,126 @@ class DomSelector {
 
 
 
-export class TargetSelect{
-  node: ts.Node
-  selectors: DomSelector[] = []
-  constructor(node: ts.Node){
-    this.node = node
-    this.getSelectors()
+
+
+export class DomSelector {
+  selectors: Selector[] = []
+  constructor(readonly node: ts.Node){
+    this.getSelector()
   }
-  getSelectors(){
-    let offset = this.node.getStart()
-    this.node.getText().split(' ').forEach(item => {
-      if(item == ''){
-        ++offset
-      }else{
-        this.selectors.push(new DomSelector(offset,this.node))
+  getSelectorTextInfo = (node: ts.Node)=>{
+    const selectorPlaceType = {
+      [ts.SyntaxKind.StringLiteral]:(node: ts.StringLiteral)=>{
+        return {
+          text: node.getText(),
+          offset: 0,
+        }
+      },
+      [ts.SyntaxKind.TemplateHead]:(node: ts.TemplateHead)=>{
+        return {
+          text: node.getText().slice(0,-2),
+          offset: 0,
+        }
+      },
+      [ts.SyntaxKind.LastTemplateToken]:(node: ts.TemplateTail)=>{
+        return {
+          text: node.getText().slice(1),
+          offset: 1,
+        }
+      },
+      [ts.SyntaxKind.TemplateMiddle]:(node: ts.TemplateMiddle)=>{
+        return {
+          text: node.getText().slice(1,-2),
+          offset: 1,
+        }
+      },
+    }
+    let textInfo = {
+      text:  node.getText(),
+      offset: node.getStart()
+    }
+    if(selectorPlaceType[node.kind]){
+      textInfo = selectorPlaceType[node.kind](node)
+      textInfo = this.getSelectorRawText(textInfo.text,textInfo.offset)
+    }
+    return textInfo
+  }
+  getSelectorRawText(text:string,offset:number){
+    let stringSymbols = ['"',"'",'`']
+    if(stringSymbols.includes(text[0])){
+      offset++
+      text = text.slice(1)
+    }
+    if(stringSymbols.includes(text[text.length -1])){
+      text = text.slice(0,-1)
+    }
+    return {text,offset}
+  }
+  getSelector(){
+    let {text,offset } = this.getSelectorTextInfo(this.node)
+    offset += this.node.getStart()
+    text.split(' ').forEach(item => {
+      if(item != ''){
+        this.selectors.push(new Selector(this.node,offset,item))
         offset += item.length
       }
+      ++offset
     })
   }
+
+}
+
+
+
+
+export class TargetSelector{
+  node: ts.Node
+  pos:number
+  constructor(node: ts.Node,pos:number){
+    this.node = node
+    this.pos = pos
+    this.getSelector()
+  }
+  selectorText = ''
+  selectorStart = 0
+  static isValidSelector = (node: ts.Node)=>{
+    return [
+      ts.SyntaxKind.StringLiteral,
+      ts.SyntaxKind.TemplateHead,
+      ts.SyntaxKind.LastTemplateToken,
+      ts.SyntaxKind.TemplateMiddle,
+    ].includes(node.kind)
+  }
+  getSelector(){
+    let domSelector =  new DomSelector(this.node);
+    let selector = domSelector.selectors.find(selector=>{
+      if(selector.offset <= this.pos && this.pos <= (selector.offset+ selector.text.length)){
+        return selector
+      }
+    })
+    if(selector){
+      this.selectorText = selector.text
+      this.selectorStart = selector.offset
+    }
+   
+    
+
+    // let {text,offset } = getSelectorTextInfo(this.node)
+    // offset += this.node.getFullStart()
+    // text.split(' ').forEach(item => {
+    //   if(item == ''){
+    //     ++offset
+    //   }else{
+    //     if(offset <= this.pos && this.pos <= (offset+ item.length)){
+    //       this.selectorText = item
+    //       this.selectorStart = offset
+    //     }
+    //     // this.selectors.push(new DomSelector(offset,this.node))
+    //     offset += item.length
+    //   }
+    // })
+  }
+
 
 
 

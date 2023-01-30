@@ -4,6 +4,7 @@
 type Ts  = typeof import("typescript")
 // import  from 'typescript/lib/tsserverlibrary'
 import * as ts from 'typescript'
+import { DomSelector } from '../factory/nodeFactory'
 import TsHelp from '../service/tsHelp'
 import { findResult, flatten, unique } from '../utils/utils'
 import { containerNames ,cssSelectors} from './types'
@@ -15,6 +16,7 @@ type JsxElementNodeCommonDefault = {
 export type CandidateTextNode =  JsxElementNodeCommonDefault & {
   type: 'textNode',
   text: string,
+  offset: number,
   parent?: JsxElementSelector
 }
 export type JsxElementSelector = {
@@ -240,29 +242,48 @@ export default function extractCssSelectorWorkWrap ({ node,languageService, tsHe
     let { head ,templateSpans} = node
     let templateSpansNodes = flatten(templateSpans.map((node)=>extractCssSelectorWork(node) || []))
     let headText = head.text.trim()
-    let classNames = headText.split(' ').filter(item => item)
-    if(classNames.length){
-      classNames.forEach(className=>{
-        templateSpansNodes.unshift({
-          type: "textNode",
-          text: className,
-          tsNode: head
-        })
+    let domSelector = new DomSelector(head);
+    domSelector.selectors.forEach(selector=>{
+      templateSpansNodes.unshift({
+        type: "textNode",
+        text: selector.text,
+        offset: selector.offset,
+        tsNode: head
       })
-    }
+    })
+
+    // let classNames = headText.split(' ').filter(item => item)
+    // if(classNames.length){
+    //   classNames.forEach(className=>{
+    //     templateSpansNodes.unshift({
+    //       type: "textNode",
+    //       text: className,
+    //       tsNode: head
+    //     })
+    //   })
+    // }
     return templateSpansNodes
   }
   function extractTemplateSpan(node: ts.TemplateSpan){
     let { literal ,expression} = node
     let templateSpanNode = extractCssSelectorWork(expression) || []
-    if(literal.text.trim()){
-      // templateSpanNode.push(literal)
+    let domSelector = new DomSelector(literal)
+    domSelector.selectors.forEach(selector=>{
       templateSpanNode.push({
         type: "textNode",
-        text: literal.text.trim(),
+        text: selector.text,
+        offset: selector.offset,
         tsNode: literal,
       })
-    }
+    })
+    // if(literal.text.trim()){
+    //   // templateSpanNode.push(literal)
+    //   templateSpanNode.push({
+    //     type: "textNode",
+    //     text: literal.text.trim(),
+    //     tsNode: literal,
+    //   })
+    // }
     return templateSpanNode
   }
   function extractIdentifier(node: ts.Identifier){
@@ -293,15 +314,34 @@ export default function extractCssSelectorWorkWrap ({ node,languageService, tsHe
  
   function extractStringLiteral(node: ts.StringLiteral):JsxElementNode[]{
     let { text,} = node
-    text = text.trim()
-    let classNameTexts = text.split(' ').filter(item => item)
-    return classNameTexts.map(className =>{
-      return {
+    // text = text.trim()
+    let classNameTexts = text.split(' ')
+    let offset = node.getFullStart()
+    let classNames:JsxElementNode[] = []
+    let domSelector = new DomSelector(node)
+    domSelector.selectors.forEach(selector=>{
+      classNames.push({
         type: "textNode",
-        text: className,
+        text: selector.text,
+        offset: selector.offset,
         tsNode: node,
-      }
+      })
     })
+
+    // classNameTexts.map(className =>{
+    //   if(className == ''){
+    //     offset++
+    //   }else{
+    //     classNames.push({
+    //       type: "textNode",
+    //       text: className,
+    //       offset: offset,
+    //       tsNode: node,
+    //     })
+    //     offset+= className.length
+    //   }
+    // })
+    return classNames
     // return [
     //   {
     //     type: "textNode",
@@ -326,11 +366,7 @@ export default function extractCssSelectorWorkWrap ({ node,languageService, tsHe
     // let { literal ,expression} = node
 
   }
-  function extract_(node: ts.Identifier){
-    // extractCssSelectorWork(node.expression)
-    // let { literal ,expression} = node
 
-  }
   
   function extractCssSelectorWork(node: ts.Node| undefined):JsxElementNode[]|undefined{
     if(!node){

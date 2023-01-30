@@ -25,6 +25,9 @@ var User = styled.div`
         }
     }
   }
+  .user2{
+
+  }
 `
 
 var roots = {
@@ -79,8 +82,8 @@ const AA = () => {
       <div  className='user'>
         
       </div>
-      <div  className='user user3'>
-        <div className={ '' }></div>
+      <div  className=' user2 user user3 user2 '>
+        <div className={ 'user2' }></div>
         <div className={'   user1     user3 '}>
           <div id='user5'></div>
         </div>

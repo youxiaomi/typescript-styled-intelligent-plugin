@@ -11,7 +11,8 @@ import extractCssSelectorWorkWrap, { JsxElementNode,CandidateTextNode } from './
 import * as CssNode from 'vscode-css-languageservice/lib/umd/parser/cssNodes'
 import { extractStyleSheetSelectorWorkWrap } from './extractStyleSheet'
 import  {  TemplateHelper } from '../utils/templateUtil'
-import { createStyleSheetAbstractSyntaxTree } from '../factory/nodeFactory'
+import { createStyleSheetAbstractSyntaxTree, TargetSelector } from '../factory/nodeFactory'
+import { JsxParser, ParentReferenceNode } from './jsxParser'
 
 export type StyledComponentNode = {
   type: 'styledElement',
@@ -67,81 +68,85 @@ export default class CssSelectorParser{
       return 
     }
     //todo TemplateHead   LastTemplateToken
-    if(node.kind != ts.SyntaxKind.StringLiteral){
+    if(node.kind != ts.SyntaxKind.StringLiteral && node.kind != ts.SyntaxKind.TemplateHead && node.kind != ts.SyntaxKind.LastTemplateToken && node.kind != ts.SyntaxKind.TemplateMiddle){
       return
     }
-    
+    if(!TargetSelector.isValidSelector(node)){
+      return undefined
+    }
+    let targetSelector = new TargetSelector(node, pos)
     let stringNode = node as ts.StringLiteral
     // let selectors = stringNode.getText().split(' ').map(item => item.trim())
-    node = node.parent
+    // node = node.parent
 
-    const workVariableDeclarationwork = (node:ts.VariableDeclaration)=>{
-      let stringReferences = this.tsHelp.getReferences(fileName,node.getStart());
-      let stringNodeReferences = stringReferences.map(reference=>{
-        return this.tsHelp.findNode(sourceFile!,reference.textSpan.start)
-      })
-      let result = stringNodeReferences.map(referenceNode=>{
-        return findStyledNode(referenceNode!)
-      }).filter(item => item) as StyledComponentNode[][]
+    // const workVariableDeclarationwork = (node:ts.VariableDeclaration)=>{
+    //   let stringReferences = this.tsHelp.getReferences(fileName,node.getStart());
+    //   let stringNodeReferences = stringReferences.map(reference=>{
+    //     return this.tsHelp.findNode(sourceFile!,reference.textSpan.start)
+    //   })
+    //   let result = stringNodeReferences.map(referenceNode=>{
+    //     return findStyledNode(referenceNode!)
+    //   }).filter(item => item) as StyledComponentNode[][]
       
-      return unique(flatten(result),(pre,current)=>{
-        return pre.tsNode == current.tsNode
-      })
-    }
-    const workJsxAttribute = (node:ts.JsxAttribute)=>{
-      let { name } = node
-      if(name.escapedText == 'className' || name.escapedText == 'id'){
-        return findStyledNode(node.parent)
-      }
-    }
-    const workJsxOpeningElement = (node:ts.JsxOpeningElement):StyledComponentNode[] | undefined=>{
-      let identifier = this.tsHelp.getJsxOpeningElementIdentier(node);
-      if(identifier){
-        let definitions = this.tsHelp.getDefinition(fileName,identifier.pos);
-        let isCustomeJsxElement = definitions.find(node=>this.tsHelp.isCustomJsxElement(node))
-        if(isCustomeJsxElement){
-          let referenceNodes = this.tsHelp.getReferenceNodes(fileName,identifier.pos) as  ts.Node[]
-          let {scssText} = findResult(referenceNodes,this.tsHelp.getStyledTemplateScss) || {}
-          if(scssText){
-            return [
-              {
-                type: 'styledElement',
-                scssText: scssText,
-                tsNode: node.parent,
-                parent: node.parent && node.parent.parent && findStyledNode(node.parent.parent) || []
-              }
-            ]
-          }else{
-            return node.parent && node.parent.parent && findStyledNode(node.parent.parent) || undefined
-          }
-        }else{
-          return node.parent && node.parent.parent && findStyledNode(node.parent.parent) || undefined
-        }
-      }
-    }
-    // const workJsxElement = (node: ts.JsxElement)=>{
-    //   return findStyledNode(node)
+    //   return unique(flatten(result),(pre,current)=>{
+    //     return pre.tsNode == current.tsNode
+    //   })
     // }
-    const findStyledNode = (node:ts.Node):StyledComponentNode[]|undefined=>{
-      console.log(ts.SyntaxKind[node.kind],node.getFullText());
-      switch(node.kind){
-        case ts.SyntaxKind.VariableDeclaration:
-          return workVariableDeclarationwork(node as ts.VariableDeclaration);
-        case ts.SyntaxKind.JsxAttribute:
-          return workJsxAttribute(node as ts.JsxAttribute);
-        case ts.SyntaxKind.JsxOpeningElement:
-          return workJsxOpeningElement(node as ts.JsxOpeningElement)
-        case ts.SyntaxKind.JsxElement:
-          return workJsxOpeningElement((node as ts.JsxElement).openingElement)
-        case ts.SyntaxKind.JsxClosingElement:
-          return undefined
-        default:
-          return findStyledNode(node.parent)
-      }
-    }
-
-    let styledComponentNode = findStyledNode(node) || []
-    let definitions = this.getSelectors(styledComponentNode!, stringNode);
+    // const workJsxAttribute = (node:ts.JsxAttribute)=>{
+    //   let { name } = node
+    //   if(name.escapedText == 'className' || name.escapedText == 'id'){
+    //     return findStyledNode(node.parent)
+    //   }
+    // }
+    // const workJsxOpeningElement = (node:ts.JsxOpeningElement):StyledComponentNode[] | undefined=>{
+    //   let identifier = this.tsHelp.getJsxOpeningElementIdentier(node);
+    //   if(identifier){
+    //     let definitions = this.tsHelp.getDefinition(fileName,identifier.pos);
+    //     let isCustomeJsxElement = definitions.find(node=>this.tsHelp.isCustomJsxElement(node))
+    //     if(isCustomeJsxElement){
+    //       let referenceNodes = this.tsHelp.getReferenceNodes(fileName,identifier.pos) as  ts.Node[]
+    //       let {sassText} = findResult(referenceNodes,this.tsHelp.getStyledTemplateScss) || {}
+    //       if(sassText){
+    //         return [
+    //           {
+    //             type: 'styledElement',
+    //             scssText: sassText,
+    //             tsNode: node.parent,
+    //             parent: node.parent && node.parent.parent && findStyledNode(node.parent.parent) || []
+    //           }
+    //         ]
+    //       }else{
+    //         return node.parent && node.parent.parent && findStyledNode(node.parent.parent) || undefined
+    //       }
+    //     }else{
+    //       return node.parent && node.parent.parent && findStyledNode(node.parent.parent) || undefined
+    //     }
+    //   }
+    // }
+    // // const workJsxElement = (node: ts.JsxElement)=>{
+    // //   return findStyledNode(node)
+    // // }
+    // const findStyledNode = (node:ts.Node):StyledComponentNode[]|undefined=>{
+    //   console.log(ts.SyntaxKind[node.kind],node.getFullText());
+    //   switch(node.kind){
+    //     case ts.SyntaxKind.VariableDeclaration:
+    //       return workVariableDeclarationwork(node as ts.VariableDeclaration);
+    //     case ts.SyntaxKind.JsxAttribute:
+    //       return workJsxAttribute(node as ts.JsxAttribute);
+    //     case ts.SyntaxKind.JsxOpeningElement:
+    //       return workJsxOpeningElement(node as ts.JsxOpeningElement)
+    //     case ts.SyntaxKind.JsxElement:
+    //       return workJsxOpeningElement((node as ts.JsxElement).openingElement)
+    //     case ts.SyntaxKind.JsxClosingElement:
+    //       return undefined
+    //     default:
+    //       return findStyledNode(node.parent)
+    //   }
+    // }
+    const jsxParser = new JsxParser(this.typescript,this.languageService,this.tsHelp)
+    let styledComponentNode  = jsxParser.findStyledNodeOfParent(node,fileName)
+    // let styledComponentNode = findStyledNode(node) || []
+    let definitions = this.getSelectors(styledComponentNode!, targetSelector);
     if(!definitions.length){
       return undefined
     }
@@ -208,21 +213,22 @@ export default class CssSelectorParser{
    * 从js语法中提取styleSheet中css selector
    * 
    */
-  getSelectors = (styledComponentNode:StyledComponentNode[],sourceSelector:ts.StringLiteral)=>{
+  getSelectors = (styledComponentNode:ParentReferenceNode[],targetSelector:TargetSelector)=>{
     let isElement = (node:JsxElementNode)=>{
       return node.type == 'styledElement' || node.type == 'intrinsicElements'
     }
     console.log(styledComponentNode);
-    const getCandidateSelector = (node:StyledComponentNode)=>{
+    const getCandidateSelector = (node:ParentReferenceNode)=>{
       let result: ts.DefinitionInfo[] = []
 
 
       if(node.type == 'styledElement'){
-        if(node.scssText.match(sourceSelector.text)){
+        let { sassText } = this.tsHelp.getStyledTemplateScss(node.referenceNode) || {}
+        if(sassText && sassText.match(targetSelector.selectorText)){
           // let parseCssSelectors = this.parseCssSelector(node.tsNode as ts.JsxElement)
           let parseCssSelectors = this.parseCssSelector(node.tsNode as ts.JsxElement);
           let cssService = getScssService();
-          let cssScan = cssService.getStyleSheetScanByJsxElementNode(parseCssSelectors[0],sourceSelector);
+          let cssScan = cssService.getStyleSheetScanByJsxElementNode(parseCssSelectors[0],targetSelector);
           // new TemplateStringContext();
 
           let cssDoc = cssService.getDefaultCssTextDocument(cssScan.getText())
@@ -231,7 +237,7 @@ export default class CssSelectorParser{
           let tsNode = parseCssSelectors[0].tsNode as ts.JsxElement
           let identiferName = this.tsHelp.getJsxOpeningElementIdentier(tsNode.openingElement)
           let styledDefintions =  this.tsHelp.getDefinitionLastNodeByIdentiferNode(identiferName!)
-          let { scssText = '',template,TaggedTemplateNode } = this.tsHelp.getStyledTemplateScss(styledDefintions) || {}
+          let { sassText = '',template,TaggedTemplateNode } = this.tsHelp.getStyledTemplateScss(styledDefintions) || {}
           let context = new TemplateStringContext(template!,this.tsHelp)
           let doc = cssService.generateCssTextDocument(context)
           let currentStyledComponentStyleSheet = cssService.getScssStyleSheet(doc)
@@ -244,7 +250,7 @@ export default class CssSelectorParser{
           const  { matchSourceNodes,matchTargetNodes } =  cssService.matchCssSelectorNodes(targetTree,sourceTree);
           let cssNodes = Array.from(matchTargetNodes).map(item => item.node)
           cssNodes = unique(cssNodes,(pre,current)=>pre.offset == current.offset);
-          cssNodes = cssNodes.filter(item => item.getText().match(sourceSelector.getText().slice(1,-1)))
+          cssNodes = cssNodes.filter(item => item.getText().match(targetSelector.selectorText))
           let fileName = context.getFileName();
           const definitions: ts.DefinitionInfo[] = cssNodes.map(node=>{
             return {
@@ -266,12 +272,12 @@ export default class CssSelectorParser{
           // result = result.concat(candidateSelectors)
         }
       }
-      if(node.parent && Array.isArray(node.parent)){
-        node.parent.forEach((node)=>{
-          let candidateSelectors =  getCandidateSelector(node)
-          result = result.concat(candidateSelectors)
-        })
-      }
+      // if(node.parent && Array.isArray(node.parent)){
+      //   node.parent.forEach((node)=>{
+      //     let candidateSelectors =  getCandidateSelector(node)
+      //     result = result.concat(candidateSelectors)
+      //   })
+      // }
       return result
     }
 
