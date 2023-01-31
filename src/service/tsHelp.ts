@@ -59,11 +59,15 @@ export default class TsHelp {
 
       let sourceFile = program?.getSourceFile(reference.fileName)
       if (sourceFile) {
-        if(!reference.contextSpan){
-          return undefined
+        let start = reference.textSpan.start
+        let length = reference.textSpan.length
+        if(reference.contextSpan){
+          // return undefined
+          start =  reference.contextSpan?.start || 0 
+          length = reference.contextSpan?.length || 0
         }
-        let start = reference.contextSpan?.start || 0
-        let end  = ( reference.contextSpan?.start || 0 )+ (reference.contextSpan?.length || 0 )
+        // let start = reference.contextSpan?.start || 0
+        let end  =  start + length
         const  node = this.findNodeByRange(sourceFile,start, end)
         if(node){
           referenceNodes.push(node)

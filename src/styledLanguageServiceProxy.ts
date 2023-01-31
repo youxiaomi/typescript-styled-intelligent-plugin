@@ -37,21 +37,25 @@ export default class StyledLanguageServiceProxy {
     const tsHelp = new TsHelp(this.typescript, this.languageService);
 
     const cssSelectorParse = new CssSelectorParser(this.typescript, this.languageService, tsHelp);
-
-    let result =  cssSelectorParse.getStyledComponentNode(fileName, position)
-    if(result){
-      return result
+    try{
+      let result =  cssSelectorParse.getStyledComponentNode(fileName, position)
+      if(result){
+        return result
+      }
+    }catch(e){
+      console.log(e);
     }
     let context = this.helper.getTemplate(fileName,position)
     if(!context){
       return
     }
     try{
-      result = cssSelectorParse.getSelectorCandidateByCssNode(fileName,position);
+      let result = cssSelectorParse.getSelectorCandidateByCssNode(fileName,position);
+      return result
     }catch(e){
       console.log(e);
     }
-    return result
+    // return result
   }
   private tryGetDefinitionAndBoundSpan = (delegate) => {
 

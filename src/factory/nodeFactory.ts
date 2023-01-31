@@ -2,7 +2,6 @@
 
 import ts from 'typescript'
 import * as CssNode from 'vscode-css-languageservice/lib/umd/parser/cssNodes'
-import { getSelectorTextInfo } from '../utils/utils'
 const { NodeType}  = CssNode
 
 
@@ -367,6 +366,12 @@ export class DomSelector {
           offset: 1,
         }
       },
+      [ts.SyntaxKind.FirstTemplateToken]:(node: ts.TemplateMiddle)=>{
+        return {
+          text: node.getText().slice(1,-1),
+          offset: 1,
+        }
+      },
     }
     let textInfo = {
       text:  node.getText(),
@@ -417,11 +422,16 @@ export class TargetSelector{
   selectorText = ''
   selectorStart = 0
   static isValidSelector = (node: ts.Node)=>{
+    let parent = node.parent as ts.TaggedTemplateExpression
+    if(parent && parent.tag ){
+      return false
+    }
     return [
       ts.SyntaxKind.StringLiteral,
       ts.SyntaxKind.TemplateHead,
       ts.SyntaxKind.LastTemplateToken,
       ts.SyntaxKind.TemplateMiddle,
+      ts.SyntaxKind.FirstTemplateToken,
     ].includes(node.kind)
   }
   getSelector(){

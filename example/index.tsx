@@ -85,22 +85,42 @@ var ShowMemeber = (props:any)=>{
 
 var u:string = 'user1'
 var getAA = ()=>{
-  return 'user2'
+  return u == 'u' ?  'user' : 'user3'
 }
+var aa = ['a']
+function renderElement(ele:any){
+  // return [
+  //   <div className='user'>123</div>,
+  //   <div className='user'>123</div>,
+  //   <div className='user user22'>123</div>,
+  // ]
+
+  // return renderElement2()
+  return ele
+}
+function renderElement2(){
+  return <div className='user'>123</div>
+}
+var ele = <div className='user'>1111</div>
 const AA = () => {
 
   return <div>
-    <User className={`user2 ${u} user9 ${getAA()}`}>
-    
+    <User className={`user2 ${u} user9`}>
+      { renderElement(ele) }
+      {/* { renderElement2() } */}
+      { aa.map(a=>{
+        return <div  className='user'></div>
+      }) }
+      { <div  className='user'></div> }
       <div  className='user'>
         <div className='user1'>
           <div id='user5'></div>
         </div>
       </div>
-      <div className={`user22 user3`}></div>
+      <div className={`user22 user3 ${ u ? 'user' : 'user3' }  ${getAA()}`}></div>
       <div  className=' user22 user user3 user2 '>
         
-        <div className={` user222 ${getAA()}  user3   `}>
+        <div className={` user222   user3   `}>
           <div className='age'>
             <div className='age2'> </div>
           </div>

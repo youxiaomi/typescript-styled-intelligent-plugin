@@ -6,7 +6,7 @@ type Ts  = typeof import("typescript")
 import * as ts from 'typescript'
 import { DomSelector } from '../factory/nodeFactory'
 import TsHelp from '../service/tsHelp'
-import { findResult, flatten, unique } from '../utils/utils'
+import { findResult, flatten, unique ,omitUndefined} from '../utils/utils'
 import { containerNames ,cssSelectors} from './types'
 
 type JsxElementNodeCommonDefault = {
@@ -33,7 +33,7 @@ type TaggedTemplateExpression =  JsxElementNodeCommonDefault &  {
   parent?
 }
 
-type StyledElement = JsxElementNodeCommonDefault & {
+export type StyledElement = JsxElementNodeCommonDefault & {
   type: "styledElement" | 'intrinsicElements'
   selectors: JsxElementSelector[],
   parent?: StyledElement
@@ -136,7 +136,6 @@ export default function extractCssSelectorWorkWrap ({ node,languageService, tsHe
       return !isFunctionComponentElementChildren(node)
     })
 
-    console.log(node.getFullText(),'2222');
     
     const getSelectors = (node: ts.JsxAttribute): JsxElementSelector[]=>{
       let selectorAttributions:any[] = ['className','id']
@@ -298,7 +297,15 @@ export default function extractCssSelectorWorkWrap ({ node,languageService, tsHe
     })
   }
   function extractCallExpression(node: ts.CallExpression){
-    let {  expression,arguments:_arguments  }  = node
+    let {  expression,arguments:_arguments }  = node
+    if(expression.kind == ts.SyntaxKind.PropertyAccessExpression){
+      if((expression as ts.PropertyAccessExpression).name.escapedText == 'map' ){
+        return extractCssSelectorWork(_arguments[0])
+      }
+    }
+    //TODO params jsxelement
+    
+
     return  extractCssSelectorWork(expression)
   }
   function extractVariableDeclarationList(node: ts.VariableDeclarationList){
@@ -312,11 +319,9 @@ export default function extractCssSelectorWorkWrap ({ node,languageService, tsHe
     return ts.forEachChild(declarationList,extractCssSelectorWork) || []
   }
  
+  
   function extractStringLiteral(node: ts.StringLiteral):JsxElementNode[]{
     let { text,} = node
-    // text = text.trim()
-    let classNameTexts = text.split(' ')
-    let offset = node.getFullStart()
     let classNames:JsxElementNode[] = []
     let domSelector = new DomSelector(node)
     domSelector.selectors.forEach(selector=>{
@@ -350,6 +355,9 @@ export default function extractCssSelectorWorkWrap ({ node,languageService, tsHe
     //   }
     // ]
   }
+  function extractNoSubstitutionTemplateLiteral(node):JsxElementNode[]{
+      return extractStringLiteral(node as ts.StringLiteral)
+  }
   function extractTaggedTemplateExpression(node: ts.TaggedTemplateExpression):JsxElementNode{
     const  { tag,template } = node
     console.log(template);
@@ -367,6 +375,18 @@ export default function extractCssSelectorWorkWrap ({ node,languageService, tsHe
 
   }
 
+  function extractPropertyAccessExpression(node: ts.PropertyAccessExpression){
+    const { expression ,name} = node
+    
+    return []
+
+  }
+  function extractArrayLiteralExpression(node: ts.ArrayLiteralExpression){
+    const { elements } = node
+    let result = omitUndefined( elements.map(extractCssSelectorWork))
+    return flatten(result)
+  }
+
   
   function extractCssSelectorWork(node: ts.Node| undefined):JsxElementNode[]|undefined{
     if(!node){
@@ -379,6 +399,7 @@ export default function extractCssSelectorWorkWrap ({ node,languageService, tsHe
       case ts.SyntaxKind.VariableDeclaration:
         return extractVariableDeclaration(node as ts.VariableDeclaration);
       case ts.SyntaxKind.ArrowFunction:
+      case ts.SyntaxKind.FunctionDeclaration:
         return extractArrowFunction(node as ts.ArrowFunction)
       case ts.SyntaxKind.Block:
         return extractBlock(node as ts.Block)
@@ -404,8 +425,16 @@ export default function extractCssSelectorWorkWrap ({ node,languageService, tsHe
         return extractFirstStatement(node as ts.VariableStatement);
       case ts.SyntaxKind.StringLiteral:
         return extractStringLiteral(node as ts.StringLiteral);
+      case ts.SyntaxKind.FirstTemplateToken:
+        return extractNoSubstitutionTemplateLiteral(node as ts.NoSubstitutionTemplateLiteral);
       case ts.SyntaxKind.TaggedTemplateExpression:
         return [extractTaggedTemplateExpression(node as ts.TaggedTemplateExpression)]
+      case ts.SyntaxKind.PropertyAccessExpression:
+        return extractPropertyAccessExpression(node as ts.PropertyAccessExpression)
+      case ts.SyntaxKind.ArrayLiteralExpression:
+        return extractArrayLiteralExpression(node as ts.ArrayLiteralExpression)
+      case ts.SyntaxKind.Parameter:
+        return undefined
       default:
         return undefined
     }
