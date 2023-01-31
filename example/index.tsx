@@ -3,12 +3,18 @@ import React from 'react'
 import styled from 'styled-components'
 
 
+
 var bb = 123
 const getAge = ()=>{
   let   aa = 'a123'
   let bb = aa ? 'user1' : 'b123'
   return a ? aa :      bb      
 }
+var User2  = styled.div`
+
+
+`
+/* var User = styled(User2)` */
 var User = styled.div`
   .user{
     .user1{
@@ -25,8 +31,15 @@ var User = styled.div`
         }
     }
   }
-  .user2{
+  .user22,.user3{
+    .age{
+      .age2{
 
+      }
+      .age2{
+
+      }
+    }
   }
 `
 
@@ -72,7 +85,7 @@ var ShowMemeber = (props:any)=>{
 
 var u:string = 'user1'
 var getAA = ()=>{
-  return 'user8'
+  return 'user2'
 }
 const AA = () => {
 
@@ -80,15 +93,22 @@ const AA = () => {
     <User className={`user2 ${u} user9 ${getAA()}`}>
     
       <div  className='user'>
-        
-      </div>
-      <div  className=' user2 user user3 user2 '>
-        <div className={ 'user2' }></div>
-        <div className={'   user1     user3 '}>
+        <div className='user1'>
           <div id='user5'></div>
+        </div>
+      </div>
+      <div className={`user22 user3`}></div>
+      <div  className=' user22 user user3 user2 '>
+        
+        <div className={` user222 ${getAA()}  user3   `}>
+          <div className='age'>
+            <div className='age2'> </div>
+          </div>
         </div>
         tom
       </div>
+      <div id='user5'></div>
+
         {/* <ShowMemeber>
 
       </ShowMemeber>
