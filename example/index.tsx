@@ -14,8 +14,8 @@ var User2  = styled.div`
 
 
 `
-/* var User = styled(User2)` */
-var User = styled.div`
+// var User = styled.div`
+var User = styled(User2)`
   .user{
     .user1{
 
@@ -88,15 +88,19 @@ var getAA = ()=>{
   return u == 'u' ?  'user' : 'user3'
 }
 var aa = ['a']
+var elements = [
+  <div className='user'>123</div>,
+  // <div className='user'>123</div>,
+  <div className='user user22'>123</div>,
+]
 function renderElement(ele:any){
-  // return [
-  //   <div className='user'>123</div>,
-  //   <div className='user'>123</div>,
-  //   <div className='user user22'>123</div>,
-  // ]
+  return elements
 
   // return renderElement2()
-  return ele
+  function renderAge(){
+    return ele
+  }
+  // return renderAge()
 }
 function renderElement2(){
   return <div className='user'>123</div>

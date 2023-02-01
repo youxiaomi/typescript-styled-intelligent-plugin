@@ -493,7 +493,7 @@ class ScssService {
       styleSheetNodeScan.setText(text,selector)
     }
     const generateSelectorText = (selector:JsxElementSelector)=>{
-      console.log(ts.SyntaxKind[selector.tsNode.kind]);
+      // console.log(ts.SyntaxKind[selector.tsNode.kind]);
           
       if(selector.selectorType == 'className'){
         return (selector.children || []).map(generateClassName)

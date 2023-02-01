@@ -30,6 +30,11 @@ type TaggedTemplateExpression =  JsxElementNodeCommonDefault &  {
   type: 'TaggedTemplateExpression',
   tag: ts.LeftHandSideExpression,
   tagName: string,
+  parent?,
+  templateString:string
+}
+type TsNode  = JsxElementNodeCommonDefault &  {
+  type: 'tsNode',
   parent?
 }
 
@@ -39,7 +44,7 @@ export type StyledElement = JsxElementNodeCommonDefault & {
   parent?: StyledElement
 }
 
-export type JsxElementNode = CandidateTextNode | TaggedTemplateExpression | StyledElement
+export type JsxElementNode = CandidateTextNode | TaggedTemplateExpression | StyledElement | TsNode
 
 
 
@@ -166,6 +171,7 @@ export default function extractCssSelectorWorkWrap ({ node,languageService, tsHe
     let children =  ts.forEachChild(node,extractCssSelectorWork,extractCssSelectorWorkNodes) || []
     children = children.filter(child => child)
     // children = flatten(children,{deep: true})
+
     if(isIntrinsicElement){
       selectors.unshift({
         // type:  cssSelectors.element,
@@ -298,6 +304,23 @@ export default function extractCssSelectorWorkWrap ({ node,languageService, tsHe
   }
   function extractCallExpression(node: ts.CallExpression){
     let {  expression,arguments:_arguments }  = node
+    let functionNode = omitUndefined(tsHelp.getDefinitionNodes(fileName,node.getStart()))[0];
+    function parseFunction(node: ts.FunctionDeclaration,_arguments: ts.NodeArray<ts.Expression>){
+      let { body } = node
+      let results = extractCssSelectorWork(body);
+      let newResults:JsxElementNode[] = []
+      results?.forEach(result=>{
+        if(result.tsNode && result.tsNode.parent == functionNode && result.type == 'tsNode' && result.tsNode.kind == ts.SyntaxKind.Parameter){
+          let paramsResults =  extractCssSelectorWork(_arguments[0])//
+          if(paramsResults){
+            newResults = newResults.concat(paramsResults)
+          }
+          return
+        }
+        newResults.push(result)
+      })
+      return newResults
+    }
     if(expression.kind == ts.SyntaxKind.PropertyAccessExpression){
       if((expression as ts.PropertyAccessExpression).name.escapedText == 'map' ){
         return extractCssSelectorWork(_arguments[0])
@@ -305,8 +328,8 @@ export default function extractCssSelectorWorkWrap ({ node,languageService, tsHe
     }
     //TODO params jsxelement
     
-
-    return  extractCssSelectorWork(expression)
+    return parseFunction(functionNode as ts.FunctionDeclaration,_arguments)
+    // return  extractCssSelectorWork(expression)
   }
   function extractVariableDeclarationList(node: ts.VariableDeclarationList){
     return ts.forEachChild(node,extractCssSelectorWork) || []
@@ -360,15 +383,49 @@ export default function extractCssSelectorWorkWrap ({ node,languageService, tsHe
   }
   function extractTaggedTemplateExpression(node: ts.TaggedTemplateExpression):JsxElementNode{
     const  { tag,template } = node
-    console.log(template);
-    const _tag = tag as  ts.PropertyAccessExpression
-    let tagName = _tag.name.escapedText.toString()
+    let tagName = ''
+    // todo
+    let templateString = ''
+    function getExtendStyled(node: ts.TaggedTemplateExpression){
+      const  { tag,template } = node
+      if(tag.kind == ts.SyntaxKind.CallExpression){
+        // let { expression, arguments: _arguments   } = tag as ts.CallExpression;
+        // if(expression.getText()== 'styled'){
+        //   let styledComponentIndentifer = _arguments[0]
+        //   let styledComponentNode = tsHelp.getDefinitionLastNodeByIdentiferNode(styledComponentIndentifer);
+        //   if(styledComponentNode.kind == ts.SyntaxKind.FirstStatement){
+        //     let { declarationList  } = styledComponentNode as ts.VariableStatement
+        //     return ts.forEachChild(declarationList,(node)=>{
+        //       if(node.kind == ts.SyntaxKind.VariableDeclaration){
+        //         let variableDeclarationNode = node  as ts.VariableDeclaration
+        //         if(variableDeclarationNode.initializer && variableDeclarationNode.initializer?.kind == ts.SyntaxKind.TaggedTemplateExpression ){
+        //           return getExtendStyled(variableDeclarationNode.initializer as ts.TaggedTemplateExpression)
+        //         }
+        //       }
+        //     }) as JsxElementNode
+        //   }
+        // }
+        // throw new Error('tag give fail')
+      }else{
+        const _tag = tag as  ts.PropertyAccessExpression
+        tagName = _tag.name.escapedText.toString()
+        //
+        // templateString += '/n'
+        // templateString += template.getFullText()
+      }
+    }
+    getExtendStyled(node)
+
+
+    
+
     //todo  提取css对象 关联上同级className
     return {
       type: "TaggedTemplateExpression",
       tagName: tagName,
       tag: tag,
       tsNode: node,
+      templateString
     }
     // extractCssSelectorWork(node.expression)
     // let { literal ,expression} = node
@@ -392,7 +449,7 @@ export default function extractCssSelectorWorkWrap ({ node,languageService, tsHe
     if(!node){
       return []
     }
-    console.log(ts.SyntaxKind[node.kind],"----------");console.log(node.getFullText());
+    // console.log(ts.SyntaxKind[node.kind],"----------");console.log(node.getFullText());
     switch (node?.kind){
       case ts.SyntaxKind.VariableStatement: 
         return extractVariableStatement(node as ts.VariableStatement);
@@ -434,7 +491,7 @@ export default function extractCssSelectorWorkWrap ({ node,languageService, tsHe
       case ts.SyntaxKind.ArrayLiteralExpression:
         return extractArrayLiteralExpression(node as ts.ArrayLiteralExpression)
       case ts.SyntaxKind.Parameter:
-        return undefined
+        return [ { type: "tsNode",tsNode: node }]
       default:
         return undefined
     }
