@@ -1,7 +1,7 @@
 
 
 import { getSCSSLanguageService ,TextDocument,} from 'vscode-css-languageservice'
-import * as ts from 'typescript'
+import * as ts from 'typescript/lib/tsserverlibrary'
 import { NodeType,Node,RuleSet}  from 'vscode-css-languageservice/lib/umd/parser/cssNodes'
 import * as Nodes from 'vscode-css-languageservice/lib/umd/parser/cssNodes'
 import { flatten, omitUndefined } from '../utils/utils'
@@ -178,7 +178,8 @@ function  getPlaceholderSpans(node: ts.TemplateExpression) {
 export class TemplateStringContext{
   constructor(
     readonly node: ts.TemplateLiteral,
-    readonly tsHelp: TsHelp
+    readonly tsHelp: TsHelp,
+    readonly typescript: typeof ts,
   ){
 
   }
@@ -186,6 +187,7 @@ export class TemplateStringContext{
     return this.node.getSourceFile().fileName
   }
   getText(){
+    let ts = this.typescript
     let text = this.node.getText().slice(1,-1);
     if(this.node.kind == ts.SyntaxKind.NoSubstitutionTemplateLiteral){
       return text
@@ -194,6 +196,7 @@ export class TemplateStringContext{
     // return this.node.getText();
   }
   getRawText(){
+    let ts = this.typescript
     let text = this.node.getText()
     if(this.node.kind == ts.SyntaxKind.NoSubstitutionTemplateLiteral){
       return text
@@ -538,7 +541,6 @@ class ScssService {
     if(targetSelector){
       node = extractTargetSelectorStylesheet(node as StyledElement,targetSelector)
     }
-
     const generateSelectorNode = (node:JsxElementNode,targetSelector?: TargetSelector) =>{
       if(node.type == 'styledElement' || node.type == 'intrinsicElements'){
         const { type ,children = []}  = node

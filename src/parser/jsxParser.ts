@@ -1,6 +1,6 @@
-type Ts  = typeof import("typescript")
+// type Ts  = typeof import("typescript")
 // import  from 'typescript/lib/tsserverlibrary'
-import * as ts from 'typescript'
+import * as ts from 'typescript/lib/tsserverlibrary'
 import TsHelp from '../service/tsHelp'
 import { AbstractParser } from './abstractParser';
 import { StyledComponentNode } from './cssSelectorParser';
@@ -9,19 +9,19 @@ import { findResult, flatten, omitUndefined, unique } from '../utils/utils'
 
 
 export class JsxParser extends AbstractParser{
-  constructor(typescript: Ts,languageService: ts.LanguageService,tsHelp: TsHelp){
+  constructor(typescript: typeof ts,languageService: ts.LanguageService,tsHelp: TsHelp){
     super(typescript,languageService,tsHelp);
     this.iterateParentParser = new IterateParentParser(this.typescript,this.languageService,this.tsHelp)
   }
   iterateParentParser: IterateParentParser
-  findJsxOpeningElementOfParent(node:ts.Node,fileName:string){
-    return this.iterateParentParser.findStyledElement(node,fileName)
+  findJsxOpeningElementOfParent(node:ts.Node){
+    return this.iterateParentParser.findStyledElement(node)
   }
   findJsxClassAttrOfParent(){
 
   }
-  findStyledNodeOfParent(node,fileName){
-    return this.iterateParentParser.findStyledElement(node,fileName)
+  findStyledNodeOfParent(node){
+    return this.iterateParentParser.findStyledElement(node,true)
   }
 
 
@@ -36,7 +36,10 @@ class IterateParentParser extends AbstractParser{
     this.fileName = fileName
   }
   findReferencesNodes(node:ts.Node,):ParentReferenceNode[]{
-
+    let ts = this.typescript
+    if(!node){
+      return []
+    }
     switch(node.kind){
       case ts.SyntaxKind.VariableDeclaration:
         return this.findVariableDeclarationParent(node as ts.VariableDeclaration);
@@ -81,7 +84,7 @@ class IterateParentParser extends AbstractParser{
     //   }
     // })
   }
-  findParentNodes(node,fileName, type: ParentReferenceNode['type'] ,isAllParent = false){
+  findParentNodes(node, type: ParentReferenceNode['type'] ,isAllParent = false){
     let parentReferenceNodes:ParentReferenceNode[] = []
     let nodes:ParentReferenceNode[] = [{tsNode: node, type:'node'}];
     while(nodes.length){
@@ -100,8 +103,8 @@ class IterateParentParser extends AbstractParser{
     }
     return parentReferenceNodes
   }
-  findStyledElement(node,fileName,isAllParent = false){
-    return this.findParentNodes(node,fileName,'styledElement')
+  findStyledElement(node,isAllParent = false){
+    return this.findParentNodes(node,'styledElement',isAllParent)
   }
   findAllStyledElement(){
 

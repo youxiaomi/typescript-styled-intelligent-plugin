@@ -1,6 +1,6 @@
 
 
-import ts from 'typescript'
+import ts from 'typescript/lib/tsserverlibrary'
 import * as CssNode from 'vscode-css-languageservice/lib/umd/parser/cssNodes'
 const { NodeType}  = CssNode
 
@@ -337,10 +337,11 @@ class  Selector{
 
 export class DomSelector {
   selectors: Selector[] = []
-  constructor(readonly node: ts.Node){
+  constructor(readonly node: ts.Node,readonly typescript:typeof ts){
     this.getSelector()
   }
   getSelectorTextInfo = (node: ts.Node)=>{
+    let ts = this.typescript
     const selectorPlaceType = {
       [ts.SyntaxKind.StringLiteral]:(node: ts.StringLiteral)=>{
         return {
@@ -414,14 +415,15 @@ export class DomSelector {
 export class TargetSelector{
   node: ts.Node
   pos:number
-  constructor(node: ts.Node,pos:number){
+  constructor(node: ts.Node,pos:number,readonly typescript: typeof ts){
     this.node = node
     this.pos = pos
     this.getSelector()
   }
   selectorText = ''
   selectorStart = 0
-  static isValidSelector = (node: ts.Node)=>{
+  static isValidSelector = (node: ts.Node,typescript: typeof ts)=>{
+    let ts = typescript
     let parent = node.parent as ts.TaggedTemplateExpression
     if(parent && parent.tag ){
       return false
@@ -435,7 +437,7 @@ export class TargetSelector{
     ].includes(node.kind)
   }
   getSelector(){
-    let domSelector =  new DomSelector(this.node);
+    let domSelector =  new DomSelector(this.node,this.typescript);
     let selector = domSelector.selectors.find(selector=>{
       if(selector.offset <= this.pos && this.pos <= (selector.offset+ selector.text.length)){
         return selector

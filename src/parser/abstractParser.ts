@@ -1,17 +1,16 @@
 
-type Ts  = typeof import("typescript")
-import ts from 'typescript'
+import ts from 'typescript/lib/tsserverlibrary'
 import TsHelp from '../service/tsHelp'
 
 
 
 
 export  abstract class AbstractParser{
-  typescript:Ts
+  typescript:typeof ts
   languageService: ts.LanguageService
   tsHelp: TsHelp
   programe: ts.Program
-  constructor(typescript: Ts,languageService: ts.LanguageService,tsHelp: TsHelp){
+  constructor(typescript: typeof ts,languageService: ts.LanguageService,tsHelp: TsHelp){
     this.typescript = typescript
     this.languageService = languageService
     this.tsHelp = tsHelp

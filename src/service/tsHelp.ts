@@ -1,20 +1,17 @@
 
 
 
-type Ts  = typeof import("typescript")
-// import  from 'typescript/lib/tsserverlibrary'
-import * as ts from 'typescript'
+import * as ts from 'typescript/lib/tsserverlibrary'
 import { containerNames } from '../parser/types'
 import { getTaggedLiteralName, getTagName, isTaggedLiteral } from '../utils/templateUtil'
 import { omitUndefined, unique } from '../utils/utils'
 
 export default class TsHelp {
-  constructor(typescript: Ts,languageService: ts.LanguageService){
+  constructor(typescript: typeof ts,languageService: ts.LanguageService){
     this.typescript = typescript
-    typescript
     this.languageService = languageService
   }
-  typescript:Ts
+  typescript:typeof ts
   languageService: ts.LanguageService
   isInReferenceNode = (referenceNode:ts.ReferenceEntry,pos)=>{
     return referenceNode.textSpan.start <= pos && referenceNode.textSpan.start+referenceNode.textSpan.length >= pos
@@ -25,7 +22,7 @@ export default class TsHelp {
         return this.typescript.forEachChild(node, find) || node;
       }
     }
-    return find(sourceFile);
+    return find(sourceFile)
   }
   findNodeByRange(sourceFile: ts.SourceFile, startPosition: number,endPosition: number){
     let find = (node: ts.Node): ts.Node | undefined  => {
@@ -133,6 +130,7 @@ export default class TsHelp {
     return defineNode.containerName === containerNames.StyledComponentBase
   }
   getStyledTemplateScss = (node:ts.Node):{sassText:string,TaggedTemplateNode:ts.TaggedTemplateExpression,template: ts.TemplateLiteral}|undefined=>{
+    let ts = this.typescript
     if(node.kind == ts.SyntaxKind.FirstStatement){
       let _node = node as ts.VariableStatement
       let { declarationList } = _node
@@ -158,6 +156,7 @@ export default class TsHelp {
   }
 
   getJsxOpeningElementIdentier = (openingElement: ts.JsxOpeningElement) =>{
+    let ts = this.typescript
     return  ts.forEachChild(openingElement,(node)=>{
       if(node.kind == ts.SyntaxKind.Identifier){
         return node
@@ -165,6 +164,7 @@ export default class TsHelp {
     }) as  ts.Node;
   }
   getTag = (node: ts.Node)=>{
+    let ts = this.typescript
     switch(node.kind){
       case ts.SyntaxKind.TaggedTemplateExpression: 
         return getTagName(node as ts.TaggedTemplateExpression,['styled'])
@@ -184,6 +184,8 @@ export default class TsHelp {
     }
   }
   getTagVariableDeclarationNode = (node: ts.Node | undefined) => {
+
+    let ts = this.typescript
     if (!node) {
       return
     }
@@ -210,6 +212,7 @@ export default class TsHelp {
   }
   getTemplateNode = (sourceFile: ts.SourceFile,position:number)=>{
     let node = this.findNode(sourceFile,position)
+    let ts = this.typescript
     const getTemplateNode = (node:ts.Node)=>{
       switch(node.kind){
         case ts.SyntaxKind.TemplateHead:

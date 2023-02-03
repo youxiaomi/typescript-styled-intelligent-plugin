@@ -106,11 +106,20 @@ function renderElement2(){
   return <div className='user'>123</div>
 }
 var ele = <div className='user'>1111</div>
+
+const User22 = styled.div`
+  .user22{
+
+  }
+`
+
 const AA = () => {
 
   return <div>
     <User className={`user2 ${u} user9`}>
+    <User22>
       { renderElement(ele) }
+    </User22>  
       {/* { renderElement2() } */}
       { aa.map(a=>{
         return <div  className='user'></div>
@@ -150,4 +159,17 @@ const AA = () => {
       <div className='age'>age</div>
     </User> */}
   </div>
+}
+
+
+const AA1= styled.div`
+  .user{
+
+  }
+`
+
+const bb1 = () => {
+  return <AA1 >
+    <div className="user"></div>
+  </AA1>
 }
