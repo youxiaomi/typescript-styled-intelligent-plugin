@@ -120,13 +120,13 @@ export default class TsHelp {
     // return node && node.containerName != 'JSX.IntrinsicElements'
     return node && !['StyledComponentBase','JSX.IntrinsicElements'].includes(node.containerName)
   }
-  isFunctionComponent = (node)=>{
+  isFunctionComponent = (node):boolean=>{
     return node && ![containerNames.JsxIntrinsicElements,containerNames.StyledComponentBase].includes(node.containerName)
   }
-  isIntrinsicElement = (defineNode:ts.DefinitionInfo)=>{
+  isIntrinsicElement = (defineNode:ts.DefinitionInfo):boolean=>{
     return defineNode.containerName === containerNames.JsxIntrinsicElements
   }
-  isStyledComponentElement = (defineNode:ts.DefinitionInfo)=>{
+  isStyledComponentElement = (defineNode:ts.DefinitionInfo):boolean=>{
     return defineNode.containerName === containerNames.StyledComponentBase
   }
   getStyledTemplateScss = (node:ts.Node):{sassText:string,TaggedTemplateNode:ts.TaggedTemplateExpression,template: ts.TemplateLiteral}|undefined=>{

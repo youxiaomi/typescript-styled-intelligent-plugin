@@ -5,8 +5,9 @@
 // import  from 'typescript/lib/tsserverlibrary'
 import * as ts from 'typescript/lib/tsserverlibrary'
 import { DomSelector } from '../factory/nodeFactory'
+import logger from '../service/logger'
 import TsHelp from '../service/tsHelp'
-import { findResult, flatten, unique ,omitUndefined} from '../utils/utils'
+import { findResult, flatten, unique ,omitUndefined, noop} from '../utils/utils'
 import { containerNames ,cssSelectors} from './types'
 
 type JsxElementNodeCommonDefault = {
@@ -89,17 +90,55 @@ export default function extractCssSelectorWorkWrap ({ node,languageService, tsHe
 
     return  flatten(references)
   }
+
+  function extractJsxElement2(node: ts.JsxElement){
+    logger.info(node.getFullText())
+    let sourceFile = node.getSourceFile()
+    
+    const openingElement = node.openingElement;
+    const children = node.children
+    // let identiferNode = tsHelp.getDefinitionLastNodeByIdentiferNode(node.openingElement);
+    let identiferNode = tsHelp.getJsxOpeningElementIdentier(node.openingElement);
+    let identiferNodeReference = (tsHelp.getReferenceNodes(sourceFile.fileName,identiferNode.getStart()) || [])[0];
+    //instrinsic ele
+    const { attributes } = openingElement
+
+    function extractJsxAttribute(node){
+      // let nodes = _nodes  as  ts.NodeArray<ts.JsxAttribute>
+      // nodes
+      // return nodes
+      return extractCssSelectorWork(node)
+    }
+    // function extractJsxExpress(node:ts.JsxExpression){
+
+    // }
+    // if(identiferNodeReference){
+    //   attributes.properties.map(extractCssSelectorWork);
+    //   children.map(extractCssSelectorWork)
+    //   let  node =  identiferNodeReference as ts.FunctionDeclaration;
+    //   let {  body  } = node;
+
+    // }
+
+
+
+
+
+
+
+  }
+
   function extractJsxElement(node: ts.JsxElement):StyledElement{
-    console.log(languageService);
     let sourceFile = node.getSourceFile()
     let { attributes } = node.openingElement;
     let program = languageService.getProgram()
-
-    let identiferNode = ts.forEachChild(node.openingElement,(node)=>{
-      if(node.kind == ts.SyntaxKind.Identifier){
-        return node
-      }
-    }) as ts.Node
+    extractJsxElement2(node)
+    // let identiferNode = ts.forEachChild(node.openingElement,(node)=>{
+    //   if(node.kind == ts.SyntaxKind.Identifier){
+    //     return node
+    //   }
+    // }) as ts.Node
+    let identiferNode = tsHelp.getDefinitionLastNodeByIdentiferNode(node.openingElement);
     // let isIntrinsicElement = true
     console.log(node.getFullText(),'-----');
     let identiferNodeReferences = languageService.getDefinitionAtPosition(sourceFile.fileName,identiferNode.getStart()) || []
@@ -107,13 +146,29 @@ export default function extractCssSelectorWorkWrap ({ node,languageService, tsHe
     //   let sourceFile = program?.getSourceFile(identiferNode.fileName)
     //   return tsHelp.findNode(sourceFile!,identiferNode.contextSpan?.start!)
     // })
-    let isStyledComponentElement = !!identiferNodeReferences.find(tsHelp.isStyledComponentElement);
+    let identiferNodeReference = (languageService.getDefinitionAtPosition(sourceFile.fileName,identiferNode.getStart()) || [])[0]
 
-    let isIntrinsicElement = !!identiferNodeReferences?.find(tsHelp.isIntrinsicElement);
-  
+    // let isStyledComponentElement = !!identiferNodeReferences.find(tsHelp.isStyledComponentElement);
+    let isStyledComponentElement = tsHelp.isStyledComponentElement(identiferNodeReference)
 
-    let customDefineElement = identiferNodeReferences?.filter(tsHelp.isFunctionComponent) || [];
-    let customComponentDefine = customDefineElement.map(defineNode=>{
+    // let isIntrinsicElement = !!identiferNodeReferences?.find(tsHelp.isIntrinsicElement);
+    let isIntrinsicElement = tsHelp.isIntrinsicElement(identiferNodeReference)
+    
+
+    // let customDefineElement = identiferNodeReferences?.filter(tsHelp.isFunctionComponent) || [];
+    console.log(ts.ScriptKind[identiferNode.kind]);
+    
+
+    let customDefineElement = tsHelp.isFunctionComponent(identiferNodeReference);
+    // let isFucntion
+    if(tsHelp.isFunctionComponent(identiferNodeReference)){
+
+
+    }
+   
+
+
+    let customComponentDefine = [identiferNodeReference].map(defineNode=>{
       let sourceFile = program?.getSourceFile(defineNode.fileName)
       if(!sourceFile || !defineNode.contextSpan){
         return
@@ -169,6 +224,8 @@ export default function extractCssSelectorWorkWrap ({ node,languageService, tsHe
 
     let selectors = ts.forEachChild(attributes,(node)=>getSelectors(node as ts.JsxAttribute),(nodes)=>flatten(nodes.map((node)=>getSelectors(node as ts.JsxAttribute)))) || []
     let children =  ts.forEachChild(node,extractCssSelectorWork,extractCssSelectorWorkNodes) || []
+    
+
     children = children.filter(child => child)
     // children = flatten(children,{deep: true})
 
@@ -372,27 +429,34 @@ export default function extractCssSelectorWorkWrap ({ node,languageService, tsHe
     const  { tag,template } = node
     let tagName = ''
     // todo
+    //  ts.PropertyAccessExpression  ts.SyntaxKind.CallExpression  
+    // args identifier -> ts.TaggedTemplateExpression 
+    // args identifier -> ts.FunctionDeclartion->
     let templateString = ''
+
+
+
+
     function getExtendStyled(node: ts.TaggedTemplateExpression){
       const  { tag,template } = node
       if(tag.kind == ts.SyntaxKind.CallExpression){
-        // let { expression, arguments: _arguments   } = tag as ts.CallExpression;
-        // if(expression.getText()== 'styled'){
-        //   let styledComponentIndentifer = _arguments[0]
-        //   let styledComponentNode = tsHelp.getDefinitionLastNodeByIdentiferNode(styledComponentIndentifer);
-        //   if(styledComponentNode.kind == ts.SyntaxKind.FirstStatement){
-        //     let { declarationList  } = styledComponentNode as ts.VariableStatement
-        //     return ts.forEachChild(declarationList,(node)=>{
-        //       if(node.kind == ts.SyntaxKind.VariableDeclaration){
-        //         let variableDeclarationNode = node  as ts.VariableDeclaration
-        //         if(variableDeclarationNode.initializer && variableDeclarationNode.initializer?.kind == ts.SyntaxKind.TaggedTemplateExpression ){
-        //           return getExtendStyled(variableDeclarationNode.initializer as ts.TaggedTemplateExpression)
-        //         }
-        //       }
-        //     }) as JsxElementNode
-        //   }
-        // }
-        // throw new Error('tag give fail')
+        let { expression, arguments: _arguments   } = tag as ts.CallExpression;
+        if(expression.getText()== 'styled'){
+          let styledComponentIndentifer = _arguments[0]
+          let styledComponentNode = tsHelp.getDefinitionLastNodeByIdentiferNode(styledComponentIndentifer);
+          if(styledComponentNode.kind == ts.SyntaxKind.FirstStatement){
+            let { declarationList  } = styledComponentNode as ts.VariableStatement
+            return ts.forEachChild(declarationList,(node)=>{
+              if(node.kind == ts.SyntaxKind.VariableDeclaration){
+                let variableDeclarationNode = node  as ts.VariableDeclaration
+                if(variableDeclarationNode.initializer && variableDeclarationNode.initializer?.kind == ts.SyntaxKind.TaggedTemplateExpression ){
+                  return getExtendStyled(variableDeclarationNode.initializer as ts.TaggedTemplateExpression)
+                }
+              }
+            }) as JsxElementNode
+          }
+        }
+        throw new Error('tag give fail')
       }else{
         const _tag = tag as  ts.PropertyAccessExpression
         tagName = _tag.name.escapedText.toString()
@@ -419,8 +483,8 @@ export default function extractCssSelectorWorkWrap ({ node,languageService, tsHe
 
   }
 
-  function extractPropertyAccessExpression(node: ts.PropertyAccessExpression){
-    const { expression ,name} = node
+  function extractJsxAttribute(node: ts.JsxAttribute){
+    const { name, initializer } = node
     
     return []
 
@@ -436,7 +500,7 @@ export default function extractCssSelectorWorkWrap ({ node,languageService, tsHe
     if(!node){
       return []
     }
-    // console.log(ts.SyntaxKind[node.kind],"----------");console.log(node.getFullText());
+    logger.info(ts.SyntaxKind[node.kind],"----------");console.log(node.getFullText());
     switch (node?.kind){
       case ts.SyntaxKind.VariableStatement: 
         return extractVariableStatement(node as ts.VariableStatement);
@@ -476,7 +540,9 @@ export default function extractCssSelectorWorkWrap ({ node,languageService, tsHe
       // case ts.SyntaxKind.PropertyAccessExpression:
       //   return extractPropertyAccessExpression(node as ts.PropertyAccessExpression)
       case ts.SyntaxKind.ArrayLiteralExpression:
-        return extractArrayLiteralExpression(node as ts.ArrayLiteralExpression)
+        return extractArrayLiteralExpression(node as ts.ArrayLiteralExpression);
+      // case ts.SyntaxKind.JsxAttribute:
+      //   return extractJsxAttribute(node as ts.JsxAttribute)
       case ts.SyntaxKind.Parameter:
         return [ { type: "tsNode",tsNode: node }]
       default:

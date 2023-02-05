@@ -61,3 +61,5 @@ export const omitUndefined = <T>(array:T[]):OmitUndefined<T>[]=>{
 type ToArray<Type> = Type extends object ? Type[] : never;
 type StrArrOrNumArr = ToArray<string|{a:string}>;
 
+
+export const noop = ()=>undefined

@@ -472,4 +472,56 @@ export class TargetSelector{
 }
 
 
+export class JsxElementSelector{
+  type:'idSelector'|'classNameSelector'|'elementSelector'
+  text = ''
+  offset = 0
+  constructor(readonly tsNode:ts.Node,readonly parent: JsxElementNode,selectorName:string){
+    const selectors = {
+      'id': 'idSelector',
+      "className": 'classNameSelector'
+    }
+    this.type = selectors[selectorName] || 'elementSelector'
+  }
+}
 
+
+type JsxElementNodeType = "styledElement" | 'intrinsicElement'
+
+export class JsxElementNode  {
+  selectors: JsxElementSelector[] = []
+  children: JsxElementNode[] = []
+  attributes:  {[attrName:string]:JsxElementNode[]} = {}
+  parent?: JsxElementNode
+  constructor(readonly tsNode:ts.Node,readonly type:JsxElementNodeType, parent?:JsxElementNode){
+
+  }
+  addParent(parent?: JsxElementNode){
+    this.parent = parent
+  }
+  addAttribute(attrName:string,value:JsxElementNode){
+    this.attributes[attrName] = this.attributes[attrName] || []
+    this.attributes[attrName].push(value)
+  }
+  addSelector(selecotr: JsxElementSelector){
+    this.selectors.push(selecotr)
+  }
+  addChild(child:JsxElementNode){
+    this.children.push(child)
+  }
+}
+
+export class CallExpressionChain {
+  parent?: CallExpressionChain
+  constructor(readonly callExpression:ts.CallExpression){
+
+
+  }
+  setParent(parent?:CallExpressionChain){
+    this.parent = parent
+  }
+
+
+
+
+}

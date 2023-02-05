@@ -201,7 +201,7 @@ export class TemplateStringContext{
     if(this.node.kind == ts.SyntaxKind.NoSubstitutionTemplateLiteral){
       return text
     }
-    return substituter.getSubstitutions(text,getPlaceholderSpans(this.node))
+    return '`'+substituter.getSubstitutions(text.slice(1,-1),getPlaceholderSpans(this.node))+'`'
   }
   toOffset(location: ts.LineAndCharacter): number{
 

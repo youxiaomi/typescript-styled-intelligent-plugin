@@ -43,7 +43,7 @@ export default class StyledLanguageServiceProxy {
         return result
       }
     }catch(e){
-      console.log(e);
+      console.log('error---',e);
     }
     let context = this.helper.getTemplate(fileName,position)
     if(!context){
@@ -53,7 +53,7 @@ export default class StyledLanguageServiceProxy {
       let result = cssSelectorParse.getSelectorCandidateByCssNode(fileName,position);
       return result
     }catch(e){
-      console.log(e);
+      console.log('error---',e);
     }
     // return result
   }

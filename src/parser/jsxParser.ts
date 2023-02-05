@@ -5,6 +5,7 @@ import TsHelp from '../service/tsHelp'
 import { AbstractParser } from './abstractParser';
 import { StyledComponentNode } from './cssSelectorParser';
 import { findResult, flatten, omitUndefined, unique } from '../utils/utils'
+import logger from '../service/logger';
 
 
 
@@ -15,13 +16,13 @@ export class JsxParser extends AbstractParser{
   }
   iterateParentParser: IterateParentParser
   findJsxOpeningElementOfParent(node:ts.Node){
-    return this.iterateParentParser.findStyledElement(node)
+    // return this.iterateParentParser.findStyledElement(node)
   }
   findJsxClassAttrOfParent(){
 
   }
   findStyledNodeOfParent(node){
-    return this.iterateParentParser.findStyledElement(node,true)
+    return this.iterateParentParser.findTopStyledElement(node)
   }
 
 
@@ -84,11 +85,13 @@ class IterateParentParser extends AbstractParser{
     //   }
     // })
   }
-  findParentNodes(node, type: ParentReferenceNode['type'] ,isAllParent = false){
+  findParentNodes(node, type: ParentReferenceNode['type'] ,options?:{isAllParent?:boolean,topParent?:boolean,iterateLevel?:number}){
+    let { isAllParent = false } = options || {}
     let parentReferenceNodes:ParentReferenceNode[] = []
     let nodes:ParentReferenceNode[] = [{tsNode: node, type:'node'}];
     while(nodes.length){
       let currentNode = nodes.shift()
+      logger.info(currentNode?.tsNode.getFullText())
       if(currentNode){
         if(currentNode.type == type){
           parentReferenceNodes.push(currentNode)
@@ -104,10 +107,14 @@ class IterateParentParser extends AbstractParser{
     return parentReferenceNodes
   }
   findStyledElement(node,isAllParent = false){
-    return this.findParentNodes(node,'styledElement',isAllParent)
+    return this.findParentNodes(node,'styledElement',{isAllParent})
   }
   findAllStyledElement(){
 
+  }
+  findTopStyledElement(node){
+    let nodes =  this.findParentNodes(node,'styledElement',{isAllParent:true})
+    return nodes[0]
   }
   findJsxAttr(node:ts.JsxAttribute):ParentReferenceNode[]{
     let { name } = node

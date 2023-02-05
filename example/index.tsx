@@ -1,5 +1,5 @@
 
-import React from 'react'
+import React, { PropsWithChildren } from 'react'
 import styled from 'styled-components'
 
 
@@ -10,12 +10,64 @@ const getAge = ()=>{
   let bb = aa ? 'user1' : 'b123'
   return a ? aa :      bb      
 }
+
+
+
 var User2  = styled.div`
 
 
+
 `
+
+var User4 = (props:any)=>{
+  return <div>
+     { props.children }
+     { props.content }
+     { elements }
+  </div>
+}
+class UserClass extends React.Component<any>{
+
+  render(){
+
+
+    return <div className='user-class'>
+      { this.props.children }
+      { this.props.ele}
+    </div>
+  }
+
+}
+
+// var User5 = (props)=>{
+//   var dd  = props.dd
+//   // var user55 = ()=>{
+//   //   return <div>{ dd }</div>
+//   // }
+//   // return user55()
+// }
+var User3666 = (props:any)=>{
+
+  return <User2 className='user3-wrap'>
+    <div className='user333' ></div>
+    <UserClass ele={elements} ></UserClass>
+    {/* <UserClass>{ props.children }</UserClass>
+    <User4 content={<UserClass/>}>
+      { props.children }
+    </User4>
+    <User4 ele={ props.children }></User4> */}
+    {/* <User5></User5> */}
+  </User2>
+}
+
+
+
 // var User = styled.div`
 var User = styled(User2)`
+  .b123{
+    .user666{}
+  }
+
   .user{
     .user1{
 
@@ -26,9 +78,9 @@ var User = styled(User2)`
 
     }
     .user1{
-        #user5{
-
-        }
+      #user5{
+        
+      }
     }
   }
   .user22,.user3{
@@ -42,6 +94,14 @@ var User = styled(User2)`
     }
   }
 `
+var User5 = ()=>{
+  return <User>
+    <User3>
+      <div className='user3-inner'></div>
+    </User3>
+  </User>
+}
+
 
 var roots = {
   aaa:'aaa',
@@ -50,7 +110,7 @@ var roots = {
 
 var Member = styled.div`
  
-  .user,.bbbb,.bbb div.member{
+  /* .user,.bbbb,.bbb div.member{
     color: blue;
     .user1{
       width:120px
@@ -67,18 +127,18 @@ var Member = styled.div`
   }
   .member{
     height: 120px;
-  }
+  } */
 `
 
 var a = true
 
-var ShowMemeber = (props:any)=>{
-
-
+var ShowMemeber:React.FC<React.PropsWithChildren> = (props)=>{
 
   return <div>
     <Member id='testid' className={`bbbb member ${u} aaaa`}>
-      <div className={`member-age ${getAge()}`}></div>
+      <div className={`b123`}></div>
+      { props.children }
+      {/* <div className={`b123 ${getAge()} member`}></div> */}
     </Member>
   </div>
 }
@@ -117,6 +177,9 @@ const AA = () => {
 
   return <div>
     <User className={`user2 ${u} user9`}>
+      <ShowMemeber>
+        <div className='user666'></div>
+      </ShowMemeber>
     <User22>
       { renderElement(ele) }
     </User22>  
@@ -159,17 +222,4 @@ const AA = () => {
       <div className='age'>age</div>
     </User> */}
   </div>
-}
-
-
-const AA1= styled.div`
-  .user{
-
-  }
-`
-
-const bb1 = () => {
-  return <AA1 >
-    <div className="user"></div>
-  </AA1>
 }

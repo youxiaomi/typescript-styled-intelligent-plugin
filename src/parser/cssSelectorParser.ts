@@ -7,6 +7,7 @@ import { getScssService, TemplateStringContext } from '../service/cssService'
 import TsHelp from '../service/tsHelp'
 import { findResult, flatten, omitUndefined, unique } from '../utils/utils'
 import extractCssSelectorWorkWrap, { JsxElementNode,CandidateTextNode, JsxElementSelector } from './extractCssSelector'
+import extractCssWork from './extractCssSelector2'
 import * as CssNode from 'vscode-css-languageservice/lib/umd/parser/cssNodes'
 import { extractStyleSheetSelectorWorkWrap } from './extractStyleSheet'
 import  {  TemplateHelper } from '../utils/templateUtil'
@@ -41,6 +42,9 @@ export default class CssSelectorParser{
     if(!node || node.kind != ts.SyntaxKind.JsxElement){
       return []
     }
+    extractCssWork({
+      node,languageService,tsHelp:this.tsHelp,typescript: this.typescript
+    })
     const extractSelectorNode =  extractCssSelectorWorkWrap({
       node,languageService,tsHelp:this.tsHelp,typescript: this.typescript
     })
@@ -49,11 +53,6 @@ export default class CssSelectorParser{
     // let aa = this.flatClassNameChildrenNodes(extractSelectorNode)
     // console.log(aa);
     return extractSelectorNode
-  }
-  getSelectorPostion = (stringNode: ts.StringLiteral)=>{
-    let text = stringNode.getFullText()
-    text.slice(0)
-
   }
   /**
    * 获取某个字符串的存在的styledComponent组件节点
@@ -76,7 +75,7 @@ export default class CssSelectorParser{
     const jsxParser = new JsxParser(this.typescript,this.languageService,this.tsHelp)
     let styledComponentNode  = jsxParser.findStyledNodeOfParent(node)
     // let styledComponentNode = findStyledNode(node) || []
-    let definitions = this.getSelectors(styledComponentNode!, targetSelector);
+    let definitions = this.getSelectors([styledComponentNode], targetSelector);
     if(!definitions.length){
       return undefined
     }
@@ -96,50 +95,50 @@ export default class CssSelectorParser{
     // })
   }
 
-  flatClassNameChildrenNodes(node){
-    // wait optmize
-    // const flatArrayFn = flatten
-    const flatArrayFn = (node)=>{
-      let flatArray:any = []
-      if(Array.isArray(node)){
-        node.map((item)=>{
-          let flatItem = flattenNodes(item)
-          if(Array.isArray(flatItem)){
-            flatArray = [...flatArray,...flatItem]
-          }else{
-            flatArray = [...flatArray,flatItem]
-          }
-        })
-        return flatArray
-      }else{
-        return node
-      }
-    }
-    const flattenNodes = (node)=>{
-      let ts = this.typescript
-      if(node.tsNode && node.tsNode.kind == ts.SyntaxKind.JsxElement){
-        let arrays = node.children || []
-        let className = node.className || []
-        let flatArray:any[] = []
-        arrays.map((item)=>{
-          let flatItem = flattenNodes(item)
-          if(Array.isArray(flatItem)){
-            flatArray = [...flatArray,...flatItem]
-          }else{
-            flatArray = [...flatArray,flatItem]
-          }
-        })
-        node.children = flatArray
-        node.className = flatArrayFn(className)
-        return node
-      }else{
-        return flatArrayFn(node)
-      } 
-    }
+  // flatClassNameChildrenNodes(node){
+  //   // wait optmize
+  //   // const flatArrayFn = flatten
+  //   const flatArrayFn = (node)=>{
+  //     let flatArray:any = []
+  //     if(Array.isArray(node)){
+  //       node.map((item)=>{
+  //         let flatItem = flattenNodes(item)
+  //         if(Array.isArray(flatItem)){
+  //           flatArray = [...flatArray,...flatItem]
+  //         }else{
+  //           flatArray = [...flatArray,flatItem]
+  //         }
+  //       })
+  //       return flatArray
+  //     }else{
+  //       return node
+  //     }
+  //   }
+  //   const flattenNodes = (node)=>{
+  //     let ts = this.typescript
+  //     if(node.tsNode && node.tsNode.kind == ts.SyntaxKind.JsxElement){
+  //       let arrays = node.children || []
+  //       let className = node.className || []
+  //       let flatArray:any[] = []
+  //       arrays.map((item)=>{
+  //         let flatItem = flattenNodes(item)
+  //         if(Array.isArray(flatItem)){
+  //           flatArray = [...flatArray,...flatItem]
+  //         }else{
+  //           flatArray = [...flatArray,flatItem]
+  //         }
+  //       })
+  //       node.children = flatArray
+  //       node.className = flatArrayFn(className)
+  //       return node
+  //     }else{
+  //       return flatArrayFn(node)
+  //     } 
+  //   }
 
-    return flattenNodes(node)
+  //   return flattenNodes(node)
 
-  }
+  // }
   /**
    * 从js语法中提取styleSheet中css selector
    * 
@@ -155,8 +154,8 @@ export default class CssSelectorParser{
 
 
       if(node.type == 'styledElement'){
-        let { sassText } = this.tsHelp.getStyledTemplateScss(node.referenceNode) || {}
-        if(sassText && sassText.match(targetSelector.selectorText)){
+        let { sassText, template,TaggedTemplateNode  } = this.tsHelp.getStyledTemplateScss(node.referenceNode) || {}
+        // if(sassText && sassText.match(targetSelector.selectorText)){
           // let parseCssSelectors = this.parseCssSelector(node.tsNode as ts.JsxElement)
           let parseCssSelectors = this.parseCssSelector(node.tsNode as ts.JsxElement);
           let cssService = getScssService();
@@ -169,7 +168,7 @@ export default class CssSelectorParser{
           let tsNode = parseCssSelectors[0].tsNode as ts.JsxElement
           let identiferName = this.tsHelp.getJsxOpeningElementIdentier(tsNode.openingElement)
           let styledDefintions =  this.tsHelp.getDefinitionLastNodeByIdentiferNode(identiferName!)
-          let { sassText = '',template,TaggedTemplateNode } = this.tsHelp.getStyledTemplateScss(styledDefintions) || {}
+          // let { sassText = '',template,TaggedTemplateNode } = this.tsHelp.getStyledTemplateScss(styledDefintions) || {}
           let context = new TemplateStringContext(template!,this.tsHelp,this.typescript)
           let doc = cssService.generateCssTextDocument(context)
           let currentStyledComponentStyleSheet = cssService.getScssStyleSheet(doc)
@@ -213,7 +212,7 @@ export default class CssSelectorParser{
           result = result.concat(definitions)
           // let candidateSelectors = findCandidateSelector(parseCssSelectors)
           // result = result.concat(candidateSelectors)
-        }
+        // }
       }
       // all parent styledElement
       // if(node.parent && Array.isArray(node.parent)){
