@@ -27,20 +27,41 @@ enum runtimeStage {
 }
 
 
+interface ExtractCssSelectorWorkScopeInterface{
 
-class ExtractCssSelectorWorkScope{
   jsxElementNode?: JsxElementNode
   runtimeStage?: runtimeStage
   jsxAttrName?: string
-  callExpressionChain?: CallExpressionChain
+  callExpression?: {
+    tsNode: ts.Node,
+    expression:ts.Expression,
+    args?: ts.NodeArray<ts.Expression>;
+    argObj?: any
+    functionDeclartion?: ts.ArrowFunction
+  }
+
+}
+
+
+class ExtractCssSelectorWorkScope{
+  jsxElementNode?: JsxElementNode
+  // jsxElementNodeParameter?:any
+  runtimeStage?: runtimeStage
+  jsxAttrName?: string
+  callExpression?: ExtractCssSelectorWorkScopeInterface['callExpression']
   scope?: ExtractCssSelectorWorkScope
   parentScope?: ExtractCssSelectorWorkScope
   addChildScope(name,value){
     this.scope = this.scope || new ExtractCssSelectorWorkScope();
     this.scope[name] = value
   }
-  addJsxAttrNameToScope(value: string){
+  addJsxAttrNameToScope(value?: string){
     this.addChildScope('jsxAttrName',value)
+    if(value){
+      this.addRuntimeStageToScope(runtimeStage.jsxAttr)
+    }else{
+      this.addRuntimeStageToScope(runtimeStage.undefined)
+    }
   }
   addRuntimeStageToScope(value:runtimeStage){
     this.addChildScope('runtimeStage',value)
@@ -48,8 +69,11 @@ class ExtractCssSelectorWorkScope{
   addJsxElementNodeToScope(jsxElementNode: JsxElementNode){
     this.addChildScope('jsxElementNode',jsxElementNode)
   }
-  addCallExpressionChainToScope(value: CallExpressionChain){
-    this.addChildScope('callExpressionChain',value)
+  // addJsxElementNodeParameterToScope(params = {}){
+  //   this.addChildScope('jsxElementNodeParameter',params)
+  // }
+  addCallExpressionToScope(value: ExtractCssSelectorWorkScope['callExpression']){
+    this.addChildScope('callExpression',value)
   }
   addParentScope(parent:ExtractCssSelectorWorkScope){
     this.addChildScope('parentScope',parent)
@@ -70,8 +94,16 @@ class ExtractCssSelectorWorkScope{
   getJsxAttrName(){
     return this.getParentScopeProp('jsxAttrName')
   }
+  getCallExpression(){
+    return this.getParentScopeProp('callExpression')
+  }
   getParentScopeProp(propName){
-    let scope = this.scope || this
+    let scope = this.getParentScope(propName)
+    // return scope && scope[propName] || undefined
+    return scope && scope[propName] || undefined
+  }
+  getParentScope(propName: keyof ExtractCssSelectorWorkScopeInterface){
+    let scope:ExtractCssSelectorWorkScope =  this 
     while(scope && !scope[propName]){
       if(scope.parentScope){
         scope = scope.parentScope
@@ -79,19 +111,10 @@ class ExtractCssSelectorWorkScope{
         return 
       }
     }
-    return scope && scope[propName] || undefined
+    return scope
   }
   getJsxElementNode(){
     return this.getParentScopeProp('jsxElementNode')
-    // let scope = this.scope || this
-    // while(scope && !scope.jsxElementNode){
-    //   if(scope.parentScope){
-    //     scope = scope.parentScope
-    //   }else{
-    //     return 
-    //   }
-    // }
-    // return scope?.jsxElementNode
   }
   isChildStage(){
     return this.getCurrentStage() == runtimeStage.children
@@ -128,7 +151,11 @@ export default function extractCssSelectorWorkWrap({ node, languageService, tsHe
       return extractCssSelectorWork(initializer)
     }
     function extractArrowFunction(node: ts.ArrowFunction) {
-      let { body } = node
+      let { body, name } = node
+      let parentScope =  scope.getParentScope("callExpression");
+      if(parentScope && parentScope.callExpression){
+        parentScope.callExpression.functionDeclartion = node
+      }
       return extractCssSelectorWork(body);
     }
     function extractBlock(node: ts.Block) {
@@ -139,7 +166,7 @@ export default function extractCssSelectorWorkWrap({ node, languageService, tsHe
 
       let results: JsxElementUnion[] = []
       returnStatements.forEach((statement) => {
-        let expressionResult = extractCssSelectorWorkWithScope(statement.expression, scope) || []
+        let expressionResult = extractCssSelectorWork(statement.expression) || []
         results = [...results, ...expressionResult]
       })
       return results
@@ -181,19 +208,39 @@ export default function extractCssSelectorWorkWrap({ node, languageService, tsHe
       })
       return []
     }
+    function parseSelector(attributes: ts.JsxAttributes){
+      attributes.properties.forEach(property=>{
+        if(property.kind == ts.SyntaxKind.JsxAttribute){
+          let { name,initializer }   = property
+          if(['className','id'].includes(property.name && property.name?.getText())){
+            scope.addJsxAttrNameToScope(name.getText())
+            extractCssSelectorWorkWithScope(initializer,scope.getChildScope());
+            scope.addJsxAttrNameToScope(undefined)
+          }
+        }
+      })
+      scope.deleteChildScope()
+    }
+    function parseChildren(children){
+      children.forEach(child=>{
+        extractCssSelectorWork(child)
+      })
+    }
+
     function extractJsxElement2(node: ts.JsxElement) {
       logger.info(node.getFullText())
       let sourceFile = node.getSourceFile()
       let parentJsxElementNode = scope.getJsxElementNode();
-      const jsxAttrName = scope.jsxAttrName
       let jsxElementNode =  new JsxElementNode(node, 'styledElement');
-      if(scope.isChildStage()){
-        jsxElementNode.addParent(parentJsxElementNode)
-        parentJsxElementNode && parentJsxElementNode.addChild(jsxElementNode)
-      }
-      if(scope.isJsxAttrStage()){
-        parentJsxElementNode && parentJsxElementNode.addAttribute(scope.jsxAttrName ||'' ,jsxElementNode)
-      }
+      jsxElementNode.addParent(parentJsxElementNode)
+      parentJsxElementNode && parentJsxElementNode.addChild(jsxElementNode)
+      // if(scope.isChildStage()){
+      //   jsxElementNode.addParent(parentJsxElementNode)
+      //   parentJsxElementNode && parentJsxElementNode.addChild(jsxElementNode)
+      // }
+      // if(scope.isJsxAttrStage()){
+      //   parentJsxElementNode && parentJsxElementNode.addAttribute(scope.jsxAttrName ||'' ,jsxElementNode)
+      // }
       // if(parentJsxElementNode){
       //   jsxElementNode.addParent(parentJsxElementNode)
       //   parentJsxElementNode.addChild(jsxElementNode)
@@ -205,21 +252,44 @@ export default function extractCssSelectorWorkWrap({ node, languageService, tsHe
       // let identiferNode = tsHelp.getDefinitionLastNodeByIdentiferNode(node.openingElement);
       let tagName = openingElement.tagName.getText()
       let identiferNode = tsHelp.getJsxOpeningElementIdentier(node.openingElement);
-      let identiferNodeReference = (tsHelp.getReferenceNodes(sourceFile.fileName, identiferNode.getStart()) || [])[0];
+      let identiferNodeDefine = (tsHelp.getDefinition(sourceFile.fileName, identiferNode.getStart()) || [])[0];
+      let isInstrinsicElement =  tsHelp.isIntrinsicElement(identiferNodeDefine)
+      let isCustomJsxElement =  tsHelp.isCustomJsxElement(identiferNodeDefine)
+
+      let identiferNodeReference = (tsHelp.getDefinitionNodes(sourceFile.fileName, identiferNode.getStart()) || [])[0];
       //instrinsic ele
       const { attributes } = openingElement
-     
-      scope.addJsxElementNodeToScope(jsxElementNode)
-      if (identiferNodeReference) {
-        extractCssSelectorWorkWithScope(attributes,scope.getChildScope())
-        scope.addRuntimeStageToScope(runtimeStage.children)
-        children.forEach((child) => {
-          extractCssSelectorWorkWithScope(child,scope.getChildScope())
+      if(isInstrinsicElement){
+        parseSelector(attributes)
+        parseChildren(children)
+      }
+      if(isCustomJsxElement){
+        const attributeObjs:object = {}
+        attributes.properties.forEach(property=>{
+          if (property.kind == ts.SyntaxKind.JsxAttribute) {
+            let { name, initializer  } = property
+            attributeObjs[name.escapedText.toString()] = initializer
+          }
         })
-        scope.addRuntimeStageToScope(runtimeStage.undefined)
-
-        let node = identiferNodeReference as ts.FunctionDeclaration;
-        let { body } = node;
+        if (identiferNodeReference) {
+          scope.addJsxElementNodeToScope(jsxElementNode)
+          // scope.addJsxElementNodeParameterToScope()
+          scope.addCallExpressionToScope({
+            tsNode: node,
+            expression: openingElement,
+            argObj: {
+              children: children,
+              ...attributeObjs,
+            }
+          })
+          extractCssSelectorWorkWithScope(identiferNodeReference,scope.getChildScope())
+              // extractCssSelectorWorkWithScope(attributes,scope.getChildScope())
+            // scope.addRuntimeStageToScope(runtimeStage.children)
+            // children.forEach((child) => {
+            //   extractCssSelectorWorkWithScope(child,scope.getChildScope())
+            // });
+            // scope.addRuntimeStageToScope(runtimeStage.undefined)
+        }
       }
       scope.deleteChildScope()
       return []
@@ -469,8 +539,11 @@ export default function extractCssSelectorWorkWrap({ node, languageService, tsHe
     }
     function extractCallExpression(node: ts.CallExpression) {
       let { expression, arguments: _arguments } = node
-      // let callExpression =  new CallExpressionChain(node)
-      scope.addCallExpressionChainToScope(new CallExpressionChain(node))
+      scope.addCallExpressionToScope({
+        tsNode: node,
+        expression,
+        args: _arguments
+      })
       // _extraInfo.callExpressionChain.setParent(scope?.callExpressionChain);
 
 
@@ -493,11 +566,11 @@ export default function extractCssSelectorWorkWrap({ node, languageService, tsHe
       //   })
       //   return newResults
       // }
-      if (expression.kind == ts.SyntaxKind.PropertyAccessExpression) {
-        if ((expression as ts.PropertyAccessExpression).name.escapedText == 'map') {
-          return extractCssSelectorWork(_arguments[0])
-        }
-      }
+      // if (expression.kind == ts.SyntaxKind.PropertyAccessExpression) {
+      //   if ((expression as ts.PropertyAccessExpression).name.escapedText == 'map') {
+      //     return extractCssSelectorWork(_arguments[0])
+      //   }
+      // }
       //TODO params jsxelement
       let results = extractCssSelectorWorkWithScope(node, scope.getChildScope());
       return results
@@ -559,6 +632,26 @@ export default function extractCssSelectorWorkWrap({ node, languageService, tsHe
       // args identifier -> ts.TaggedTemplateExpression 
       // args identifier -> ts.FunctionDeclartion->
       let templateString = ''
+      let parrentScope = scope.getParentScope('jsxElementNode')
+      let  { jsxElementNode,callExpression } = parrentScope || {}
+
+      if(node.tag.kind == ts.SyntaxKind.PropertyAccessExpression && jsxElementNode){
+        let tag = node.tag as ts.PropertyAccessExpression
+        let {  expression,name } =  tag
+        if(expression.getText() == 'styled'){
+          let ele = name.getText();
+          let eleSelector = new JsxElementSelector(name,jsxElementNode,ele)
+          eleSelector.text = ele
+          eleSelector.offset = name.getStart()
+          // templateSpanNode.unshift(eleSelector)
+          jsxElementNode.addSelector(eleSelector)
+        }
+        if(callExpression){
+          let { children = [] } = callExpression.argObj || {} //attr selector
+          parseChildren(children)
+        }
+      
+      }
 
       if(node.tag.kind == ts.SyntaxKind.StringLiteral){
         // let tagName = node.tag.name.escapedText.toString()
@@ -630,6 +723,30 @@ export default function extractCssSelectorWorkWrap({ node, languageService, tsHe
       }))
       return flatten(result)
     }
+    function extractPropertyAccessExpression(node: ts.PropertyAccessExpression){
+      const { expression , name  } = node;
+      let sourceFile = expression.getSourceFile()
+      let defineNode = tsHelp.getDefinitionNodes(sourceFile.fileName,expression.getStart())[0];
+      if(defineNode.kind == ts.SyntaxKind.Parameter){
+        
+        // let parentScope = scope.getParentScope('callExpressionChain');
+        // let callExpression  = parentScope?.callExpressionChain?.callExpression;
+        // if(!callExpression){
+        //   return
+        // }
+        // if(referenceNode.parent == callExpression){
+
+        // }
+
+
+      }
+
+      extractCssSelectorWork(expression);
+
+      logger.info(defineNode)
+
+
+    }
 
 
     // extractJsxElement2
@@ -643,6 +760,8 @@ export default function extractCssSelectorWorkWrap({ node, languageService, tsHe
           return extractVariableStatement(node as ts.VariableStatement);
         case ts.SyntaxKind.VariableDeclaration:
           return extractVariableDeclaration(node as ts.VariableDeclaration);
+        case ts.SyntaxKind.ClassDeclaration:
+          return []
         case ts.SyntaxKind.ArrowFunction:
         case ts.SyntaxKind.FunctionDeclaration:
           return extractArrowFunction(node as ts.ArrowFunction)
@@ -674,8 +793,8 @@ export default function extractCssSelectorWorkWrap({ node, languageService, tsHe
           return extractNoSubstitutionTemplateLiteral(node as ts.NoSubstitutionTemplateLiteral);
         case ts.SyntaxKind.TaggedTemplateExpression:
           return extractTaggedTemplateExpression(node as ts.TaggedTemplateExpression)
-        // case ts.SyntaxKind.PropertyAccessExpression:
-        //   return extractPropertyAccessExpression(node as ts.PropertyAccessExpression)
+        case ts.SyntaxKind.PropertyAccessExpression:
+          return extractPropertyAccessExpression(node as ts.PropertyAccessExpression)
         case ts.SyntaxKind.ArrayLiteralExpression:
           return extractArrayLiteralExpression(node as ts.ArrayLiteralExpression);
         // case ts.SyntaxKind.JsxAttribute:
@@ -698,5 +817,6 @@ export default function extractCssSelectorWorkWrap({ node, languageService, tsHe
   scope.addRuntimeStageToScope(runtimeStage.children)
   scope.addParentScope(scope)
   extractCssSelectorWorkWithScope(node, scope.getChildScope()) as JsxElementNode[]
+  scope.deleteChildScope()
   return [rootJsxElementNode]
 }

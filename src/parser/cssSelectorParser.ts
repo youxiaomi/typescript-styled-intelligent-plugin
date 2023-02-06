@@ -45,14 +45,14 @@ export default class CssSelectorParser{
     extractCssWork({
       node,languageService,tsHelp:this.tsHelp,typescript: this.typescript
     })
-    const extractSelectorNode =  extractCssSelectorWorkWrap({
-      node,languageService,tsHelp:this.tsHelp,typescript: this.typescript
-    })
+    // const extractSelectorNode =  extractCssSelectorWorkWrap({
+    //   node,languageService,tsHelp:this.tsHelp,typescript: this.typescript
+    // })
 
     // console.log(extractSelectorNode)
     // let aa = this.flatClassNameChildrenNodes(extractSelectorNode)
     // console.log(aa);
-    return extractSelectorNode
+    return []
   }
   /**
    * 获取某个字符串的存在的styledComponent组件节点

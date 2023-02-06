@@ -45,21 +45,31 @@ class UserClass extends React.Component<any>{
 //   //   return <div>{ dd }</div>
 //   // }
 //   // return user55()
-// }
+// }'
 var User3666 = (props:any)=>{
 
   return <User2 className='user3-wrap'>
     <div className='user333' ></div>
-    <UserClass ele={elements} ></UserClass>
-    {/* <UserClass>{ props.children }</UserClass>
-    <User4 content={<UserClass/>}>
+    {/* <UserClass ele={elements} ></UserClass> */}
+    <UserClass>
+      <div>{ props.children }</div>
+    </UserClass>
+    {/* <User4 content={<UserClass/>}>
       { props.children }
-    </User4>
-    <User4 ele={ props.children }></User4> */}
+    </User4> */}
+    {/* <User4 ele={ props.children }></User4> */}
     {/* <User5></User5> */}
   </User2>
 }
+var User9999s = styled.div`
+  .user{}
+`
+var User9999 = ()=>{
+  return <User9999s>
+    <User3666> 123 </User3666>
+  </User9999s>
 
+}
 
 
 // var User = styled.div`

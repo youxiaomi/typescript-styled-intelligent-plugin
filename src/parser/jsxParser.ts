@@ -114,7 +114,7 @@ class IterateParentParser extends AbstractParser{
   }
   findTopStyledElement(node){
     let nodes =  this.findParentNodes(node,'styledElement',{isAllParent:true})
-    return nodes[0]
+    return nodes[nodes.length - 1]
   }
   findJsxAttr(node:ts.JsxAttribute):ParentReferenceNode[]{
     let { name } = node

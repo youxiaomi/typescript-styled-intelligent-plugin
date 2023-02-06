@@ -95,7 +95,7 @@ export default class TsHelp {
   getDefinitionNodes(fileName:string,pos:number){
     let definitions = this.getDefinition(fileName,pos)
     let program = this.languageService.getProgram()
-    return definitions.map(definition =>{
+    let nodes = definitions.map(definition =>{
       let sourceFile = program?.getSourceFile(definition.fileName)
       if (sourceFile) {
         if(!definition.contextSpan){
@@ -108,6 +108,7 @@ export default class TsHelp {
         return undefined
       }
     })
+    return omitUndefined(nodes)
   }
   getDefinitionNodesByNode = (node:ts.Node)=>{
     let sourceFile = node.getSourceFile();
