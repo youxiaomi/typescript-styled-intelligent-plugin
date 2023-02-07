@@ -18,7 +18,11 @@ var User2  = styled.div`
 
 
 `
-
+var elements = [
+  <div className='user'>123</div>,
+  // <div className='user'>123</div>,
+  <div className='user user22'>123</div>,
+]
 var User4 = (props:any)=>{
   return <div>
      { props.children }
@@ -26,30 +30,41 @@ var User4 = (props:any)=>{
      { elements }
   </div>
 }
+// var elements = [
+//   <div className='user'>123</div>,
+//   // <div className='user'>123</div>,
+//   <div className='user user22'>123</div>,
+// ]
+var testObjs = {
+  elements:{
+    elements: elements
+  }
+}
 class UserClass extends React.Component<any>{
-
   render(){
-
-
+    var _this = this
+    var props = _this.props
     return <div className='user-class'>
-      { this.props.children }
+      {  testObjs.elements.elements }
+      { _this.props.children }
       { this.props.ele}
     </div>
   }
 
 }
 
-// var User5 = (props)=>{
-//   var dd  = props.dd
-//   // var user55 = ()=>{
-//   //   return <div>{ dd }</div>
-//   // }
-//   // return user55()
-// }'
+class TestClass {
+  user = ''
+
+}
+let Test = new TestClass()
+
+
 var User3666 = (props:any)=>{
 
   return <User2 className='user3-wrap'>
-    <div className='user333' ></div>
+    {/* <div>{ props.children }</div>
+    <div className='user333' >{ Test.user }</div> */}
     {/* <UserClass ele={elements} ></UserClass> */}
     <UserClass>
       <div>{ props.children }</div>
@@ -66,7 +81,7 @@ var User9999s = styled.div`
 `
 var User9999 = ()=>{
   return <User9999s>
-    <User3666> 123 </User3666>
+    <User3666 name='user3666'> <div className='user6666-inner'></div> </User3666>
   </User9999s>
 
 }
@@ -158,11 +173,7 @@ var getAA = ()=>{
   return u == 'u' ?  'user' : 'user3'
 }
 var aa = ['a']
-var elements = [
-  <div className='user'>123</div>,
-  // <div className='user'>123</div>,
-  <div className='user user22'>123</div>,
-]
+
 function renderElement(ele:any){
   return elements
 

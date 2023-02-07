@@ -41,6 +41,7 @@ class IterateParentParser extends AbstractParser{
     if(!node){
       return []
     }
+    logger.info(node.getFullText())
     switch(node.kind){
       case ts.SyntaxKind.VariableDeclaration:
         return this.findVariableDeclarationParent(node as ts.VariableDeclaration);

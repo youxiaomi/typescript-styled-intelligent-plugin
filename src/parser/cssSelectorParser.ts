@@ -74,6 +74,10 @@ export default class CssSelectorParser{
 
     const jsxParser = new JsxParser(this.typescript,this.languageService,this.tsHelp)
     let styledComponentNode  = jsxParser.findStyledNodeOfParent(node)
+    if(!styledComponentNode){
+      jsxParser.findStyledNodeOfParent(node)
+      return
+    }
     // let styledComponentNode = findStyledNode(node) || []
     let definitions = this.getSelectors([styledComponentNode], targetSelector);
     if(!definitions.length){
