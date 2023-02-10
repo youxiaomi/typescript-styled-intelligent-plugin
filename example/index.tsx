@@ -40,12 +40,18 @@ var testObjs = {
     elements: elements
   }
 }
+class TestClass {
+  user = 'user'
+}
+let Test = new TestClass()
 class UserClass extends React.Component<any>{
   render(){
     var _this = this
     var props = _this.props
+    var elements = testObjs.elements
     return <div className='user-class'>
-      {  testObjs.elements.elements }
+      {/* {  Test.user } */}
+      {  elements.elements }
       { _this.props.children }
       { this.props.ele}
     </div>
@@ -53,11 +59,7 @@ class UserClass extends React.Component<any>{
 
 }
 
-class TestClass {
-  user = ''
 
-}
-let Test = new TestClass()
 
 
 var User3666 = (props:any)=>{
