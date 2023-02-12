@@ -509,6 +509,9 @@ export class JsxElementNode  {
   addChild(child:JsxElementNode){
     this.children.push(child)
   }
+  get text(){
+    return  this.tsNode.getText()
+  }
 }
 
 export class CallExpressionChain {

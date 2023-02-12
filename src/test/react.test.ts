@@ -1,4 +1,4 @@
-import ts from 'typescript'
+import ts from 'typescript/lib/tsserverlibrary'
 import TsHelp from '../service/tsHelp'
 import CssSelectorParser from '../parser/cssSelectorParser'
 // import { extractStyleSheetSelectorWorkWrap } from '../parser/extractStyleSheet'
@@ -37,9 +37,9 @@ const host: ts.LanguageServiceHost = {
     return ts.ScriptSnapshot.fromString(ts.sys.readFile(fileName) || "");
     // return ts.ScriptSnapshot.fromString(files[fileName] || "");
   },
-  fileExists: (...args)=>{
+  fileExists: (path)=>{
     // debugger
-    return ts.sys.fileExists(...args)
+    return ts.sys.fileExists(path)
   }
 }
 

@@ -5,7 +5,7 @@ import * as ts from 'typescript'
 import { NodeType, Node, RuleSet} from 'vscode-css-languageservice/lib/umd/parser/cssNodes'
 import * as Nodes from 'vscode-css-languageservice/lib/umd/parser/cssNodes'
 import { findResult, flatten, omitUndefined } from '../utils/utils'
-import { JsxElementNode, JsxElementSelector, CandidateTextNode } from '../parser/extractCssSelector'
+import { JsxElementNode, JsxElementSelector, CandidateTextNode } from './extractCssSelector3'
 import { CssTextDocument, getScssService } from '../service/cssService'
 import StyleSheetScan from "./styleSheetScan"
 

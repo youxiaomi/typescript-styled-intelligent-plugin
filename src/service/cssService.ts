@@ -5,16 +5,17 @@ import * as ts from 'typescript/lib/tsserverlibrary'
 import { NodeType,Node,RuleSet}  from 'vscode-css-languageservice/lib/umd/parser/cssNodes'
 import * as Nodes from 'vscode-css-languageservice/lib/umd/parser/cssNodes'
 import { flatten, omitUndefined } from '../utils/utils'
-import { JsxElementNode, JsxElementSelector,CandidateTextNode, StyledElement } from '../parser/extractCssSelector'
+// import { JsxElementNode, JsxElementSelector,JsxElementNode, StyledElement } from '../parser/extractCssSelector'
+// import {} from
 import * as substituter from 'typescript-styled-plugin/lib/_substituter'
 import TsHelp from './tsHelp'
 
 import StyleSheetScan from '../parser/styleSheetScan'
-import { CssSelectorNode, TargetSelector } from '../factory/nodeFactory'
+import { CssSelectorNode, JsxElementNode, JsxElementSelector, TargetSelector } from '../factory/nodeFactory'
 import { isReadable } from 'stream'
+import logger from './logger'
 
 const scssLanguageService = getSCSSLanguageService()
-
 
 
 
@@ -478,13 +479,13 @@ class ScssService {
      */
     
     const styleSheetNodeScan = new StyleSheetScan()
-    const generateClassName = (selector:CandidateTextNode)=>{
+    const generateClassName = (selector:JsxElementSelector)=>{
       let tsNode = selector.tsNode as ts.StringLiteral
 
       let text = `.${selector.text || tsNode.text.trim()}`
       styleSheetNodeScan.setText(text,selector)
     }
-    const generateId = (selector:CandidateTextNode)=>{
+    const generateId = (selector:JsxElementSelector)=>{
       let tsNode = selector.tsNode as ts.StringLiteral
       let text = `#${tsNode.text.trim()}`
       styleSheetNodeScan.setText(text,selector)
@@ -498,28 +499,33 @@ class ScssService {
     const generateSelectorText = (selector:JsxElementSelector)=>{
       // console.log(ts.SyntaxKind[selector.tsNode.kind]);
           
-      if(selector.selectorType == 'className'){
-        return (selector.children || []).map(generateClassName)
+      if(selector.type == "classNameSelector"){
+        // return (selector.children || []).map(generateClassName)
+        return generateClassName(selector)
       }
-      if(selector.selectorType == 'id'){
-        return (selector.children || []).map(generateId)
+      if(selector.type == "idSelector"){
+        // return (selector.children || []).map(generateId)
+        return generateId(selector)
       }
-      if(selector.selectorType == "element"){
-        return [generateElement(selector)]
+      if(selector.type == "elementSelector"){
+        // return [generateElement(selector)]
+        generateElement(selector)
       }
       return []
     }
-    function extractTargetSelectorStylesheet(node: StyledElement, targetSelector:TargetSelector){
-      function findTargetDomSelector(node: StyledElement,targetSelector:TargetSelector){
+    function extractTargetSelectorStylesheet(node: JsxElementNode, targetSelector:TargetSelector){
+      function findTargetDomSelector(node: JsxElementNode,targetSelector:TargetSelector){
+        logger.info(node.tsNode.getText())
         let selector = node.selectors.find(selector=>{
-          if(selector.selectorType == 'className' || selector.selectorType == 'id'){
-            let selectorDom = (selector.children || []).find(item => {
-              return item.offset <= targetSelector.selectorStart && item.offset + item.text.length >= targetSelector.selectorStart
-            });
-            if(selectorDom){
-              selector.children = [selectorDom]
-            }
-            return selectorDom
+          if(selector.type == "classNameSelector" || selector.type == "idSelector"){
+            return selector.offset <= targetSelector.selectorStart && selector.offset + selector.text.length >= targetSelector.selectorStart
+            // let selectorDom = (selector.children || []).find(item => {
+            //   return item.offset <= targetSelector.selectorStart && item.offset + item.text.length >= targetSelector.selectorStart
+            // });
+            // if(selectorDom){
+            //   selector.children = [selectorDom]
+            // }
+            // return selectorDom
           }
         })
         if(selector){
@@ -527,7 +533,7 @@ class ScssService {
           node.selectors = [selector]
         }else{
           let hasChildSelector =  node.children?.find(child=>{
-            return  findTargetDomSelector(child as StyledElement,targetSelector)
+            return  findTargetDomSelector(child as JsxElementNode,targetSelector)
           })
           node.selectors = hasChildSelector ? node.selectors :  []
         }
@@ -539,10 +545,10 @@ class ScssService {
 
 
     if(targetSelector){
-      node = extractTargetSelectorStylesheet(node as StyledElement,targetSelector)
+      node = extractTargetSelectorStylesheet(node as JsxElementNode,targetSelector)
     }
     const generateSelectorNode = (node:JsxElementNode,targetSelector?: TargetSelector) =>{
-      if(node.type == 'styledElement' || node.type == 'intrinsicElements'){
+      if(node.type == 'styledElement' || node.type == 'intrinsicElement'){
         const { type ,children = []}  = node
         let selectors = node.selectors
         // if(targetSelector){

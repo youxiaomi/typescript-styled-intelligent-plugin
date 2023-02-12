@@ -38,22 +38,34 @@ var User4 = (props:any)=>{
 var testObjs = {
   elements:{
     elements: elements
-  }
+  },
+  bbb:123
 }
 class TestClass {
   user = 'user'
 }
 let Test = new TestClass()
 class UserClass extends React.Component<any>{
+  renderUser(){
+
+    return <div className='render-user'>
+      { this.props.children }
+    </div>
+  }
+  renderEle(ele:any){
+    return <div>{ ele }</div>
+  }
   render(){
     var _this = this
     var props = _this.props
     var elements = testObjs.elements
+    let {elements:ele,bbb} = testObjs
     return <div className='user-class'>
-      {/* {  Test.user } */}
-      {  elements.elements }
+      {/* {  this.renderUser() } */}
       { _this.props.children }
       { this.props.ele}
+      { this.renderEle(this.props.ele)}
+      {  this.renderEle(ele.elements) }
     </div>
   }
 
@@ -123,9 +135,9 @@ var User = styled(User2)`
 `
 var User5 = ()=>{
   return <User>
-    <User3>
+    {/* <User3>
       <div className='user3-inner'></div>
-    </User3>
+    </User3> */}
   </User>
 }
 

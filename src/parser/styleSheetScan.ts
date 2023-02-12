@@ -1,8 +1,9 @@
-import { JsxElementNode, JsxElementSelector,CandidateTextNode } from './extractCssSelector'
+// import { JsxElementNode, JsxElementSelector,CandidateTextNode } from './extractCssSelector3'
 import * as Nodes from 'vscode-css-languageservice/lib/umd/parser/cssNodes'
+import { JsxElementSelector } from '../factory/nodeFactory'
 
-type Node = JsxElementSelector|CandidateTextNode | {type:'braceOpen'|'braceClose'} | {type:'cssNode',node: Nodes.Node}
-
+// type Node = JsxElementSelector|CandidateTextNode | {type:'braceOpen'|'braceClose'} | {type:'cssNode',node: Nodes.Node}
+type Node =   JsxElementSelector | {type:'braceOpen'|'braceClose'} | {type:'cssNode',node: Nodes.Node}
 
 export default class StyleSheetScan{
   /**

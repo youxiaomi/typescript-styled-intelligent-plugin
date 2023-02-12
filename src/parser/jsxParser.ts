@@ -22,7 +22,7 @@ export class JsxParser extends AbstractParser{
 
   }
   findStyledNodeOfParent(node){
-    return this.iterateParentParser.findTopStyledElement(node)
+    return this.iterateParentParser.findParentNodes(node,'styledElement',{isAllParent:true})
   }
 
 
@@ -44,6 +44,7 @@ class IterateParentParser extends AbstractParser{
     logger.info(node.getFullText())
     switch(node.kind){
       case ts.SyntaxKind.VariableDeclaration:
+      case ts.SyntaxKind.PropertyAssignment:
         return this.findVariableDeclarationParent(node as ts.VariableDeclaration);
       case ts.SyntaxKind.JsxAttribute:
         return this.findJsxAttr(node as ts.JsxAttribute,);
@@ -53,17 +54,30 @@ class IterateParentParser extends AbstractParser{
         return this.findJsxOpeningElement((node as ts.JsxElement),)
       case ts.SyntaxKind.FunctionDeclaration:
         return this.findFunctionDeclaration(node as ts.FunctionDeclaration)
+      case ts.SyntaxKind.ClassDeclaration:
+        return this.findClassDeclaration(node as ts.ClassDeclaration)
       case ts.SyntaxKind.JsxClosingElement:
         return []
       default:
         return this.findReferencesNodes(node.parent)
     }
   }
-  findVariableDeclarationParent(node:ts.VariableDeclaration ){
+  findVariableDeclarationParent(node:ts.VariableDeclaration|ts.PropertyAssignment ){
     const sourceFile = node.getSourceFile()
     let fileName = sourceFile.fileName
     // this.languageService. 
     let references = this.tsHelp.getReferences(fileName,node.getStart());
+    const { name, initializer } = node
+    if(this.typescript.isBindingPattern(name)){
+      const { elements } = name
+      elements.forEach(ele=>{
+        if(ts.isBindingElement(ele)){
+          const { kind,name,propertyName } = ele
+          
+        }
+      })
+    }
+ 
     let parentReferenceNodes: ParentReferenceNode[] = []
     references.forEach((reference=>{
       let node =  this.tsHelp.findNode(sourceFile!,reference.textSpan.start)
@@ -133,22 +147,24 @@ class IterateParentParser extends AbstractParser{
   findJsxId(node){
 
   }
+ 
   findJsxOpeningElement(jsxNode: ts.JsxElement):ParentReferenceNode[]{
     let node = jsxNode.openingElement
     let sourceFile = jsxNode.getSourceFile()
     let fileName = sourceFile.fileName
-    let identifier = this.tsHelp.getJsxOpeningElementIdentier(node);
+    // let identifier = this.tsHelp.getJsxOpeningElementIdentier(node);
     //default first
-    let definition = this.tsHelp.getDefinition(fileName,identifier.pos)[0];
-    if(this.tsHelp.isCustomJsxElement(definition)){
-      let node = this.tsHelp.getReferenceNodes(fileName,identifier.pos)[0] as  ts.Node
-      let {sassText} = this.tsHelp.getStyledTemplateScss(node) || {}
+    let definitions = this.tsHelp.getDefinitionOfDeclartions(node.tagName)
+    if(this.tsHelp.isCustomJsxElement(definitions)){
+      let definitionNode = this.tsHelp.getJsxOpeningElementDefineNode(node);
+      // let node = this.tsHelp.getReferenceNodes(fileName,identifier.pos)[0] as  ts.Node
+      let {sassText} = this.tsHelp.getStyledTemplateScss(definitionNode) || {}
       if(sassText){
         return [{
           type: 'styledElement',
           // sassText: sassText,
           tsNode: jsxNode,
-          referenceNode: node
+          referenceNode: definitionNode
         }]
       }
     }
@@ -163,6 +179,17 @@ class IterateParentParser extends AbstractParser{
         type:'node',
         tsNode: ref,
         // reference: ref,
+      }
+    })
+  }
+  findClassDeclaration(node: ts.ClassDeclaration):ParentReferenceNode[]{
+    const { name } = node
+    let sourceFile = node.getSourceFile()
+    let references = this.tsHelp.getReferenceNodes(sourceFile.fileName, node.getStart());
+    return references.map(ref=>{
+      return {
+        type:'node',
+        tsNode: ref,
       }
     })
   }

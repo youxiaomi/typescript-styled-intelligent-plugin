@@ -7,7 +7,9 @@ class Logger{
     this.warn(args)
   }
   warn(...args){
-    console.log('plugin styled------------',...args)
+    let e  = new Error()
+    console.log('plugin styled------------',...args);
+    console.log('line:',e.stack?.split('\n').slice(2,6))
   }
 
   

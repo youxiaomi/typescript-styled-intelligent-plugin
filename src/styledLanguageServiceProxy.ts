@@ -4,6 +4,7 @@ import StandardTemplateSourceHelper from 'typescript-template-language-service-d
 import StandardScriptSourceHelper from 'typescript-template-language-service-decorator/lib/standard-script-source-helper'
 import CssSelectorParser from './parser/cssSelectorParser';
 import TsHelp from './service/tsHelp';
+import * as tsSource from 'typescript/built/local/services/sourcemaps'
 
 
 // StandardTemplateSourceHelper
@@ -42,8 +43,8 @@ export default class StyledLanguageServiceProxy {
       if(result){
         return result
       }
-    }catch(e){
-      console.log('error---',e);
+    }catch(e:any){
+      console.log('error---',e.stack);
     }
     let context = this.helper.getTemplate(fileName,position)
     if(!context){
@@ -52,8 +53,8 @@ export default class StyledLanguageServiceProxy {
     try{
       let result = cssSelectorParse.getSelectorCandidateByCssNode(fileName,position);
       return result
-    }catch(e){
-      console.log('error---',e);
+    }catch(e:any){
+      console.log('error---',e.stack);
     }
     // return result
   }
