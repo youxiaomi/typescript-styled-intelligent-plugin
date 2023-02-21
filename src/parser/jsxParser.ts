@@ -53,9 +53,12 @@ class IterateParentParser extends AbstractParser{
       case ts.SyntaxKind.JsxElement:
         return this.findJsxOpeningElement((node as ts.JsxElement),)
       case ts.SyntaxKind.FunctionDeclaration:
+      case ts.SyntaxKind.MethodDeclaration:
         return this.findFunctionDeclaration(node as ts.FunctionDeclaration)
       case ts.SyntaxKind.ClassDeclaration:
         return this.findClassDeclaration(node as ts.ClassDeclaration)
+      case ts.SyntaxKind.PropertyDeclaration:
+        return this.findPropertyDeclaration(node as ts.PropertyDeclaration)
       case ts.SyntaxKind.JsxClosingElement:
         return []
       default:
@@ -170,10 +173,13 @@ class IterateParentParser extends AbstractParser{
     }
     return [{type:'node',tsNode: jsxNode}]
   }
+  // findFunctionDeclaration(node: ts.):ParentReferenceNode[]{
+
+  // }
   findFunctionDeclaration(node: ts.FunctionDeclaration):ParentReferenceNode[]{
     const { name } = node
     let sourceFile = node.getSourceFile()
-    let references = this.tsHelp.getReferenceNodes(sourceFile.fileName, node.getStart());
+    let references = this.tsHelp.getNodeOfReferences(sourceFile.fileName, node.getStart());
     return references.map(ref=>{
       return {
         type:'node',
@@ -185,7 +191,17 @@ class IterateParentParser extends AbstractParser{
   findClassDeclaration(node: ts.ClassDeclaration):ParentReferenceNode[]{
     const { name } = node
     let sourceFile = node.getSourceFile()
-    let references = this.tsHelp.getReferenceNodes(sourceFile.fileName, node.getStart());
+    let references = this.tsHelp.getNodeOfReferences(sourceFile.fileName, node.getStart());
+    return references.map(ref=>{
+      return {
+        type:'node',
+        tsNode: ref,
+      }
+    })
+  }
+  findPropertyDeclaration(node: ts.PropertyDeclaration):ParentReferenceNode[]{
+    let sourceFile = node.getSourceFile()
+    let references = this.tsHelp.getNodeOfReferences(sourceFile.fileName, node.getStart());
     return references.map(ref=>{
       return {
         type:'node',

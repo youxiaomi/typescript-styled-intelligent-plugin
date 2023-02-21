@@ -50,6 +50,42 @@ export default class TsHelp {
       return reference
     })
   }
+  getNodeOfReferences(fileName:string,pos: number,noSelf:boolean = true){
+    let references = this.getReferences(fileName,pos);
+    let program = this.languageService.getProgram()
+    let referenceNodes:ts.Node[] = []
+    references?.forEach(reference => {
+
+      let sourceFile = program?.getSourceFile(reference.fileName)
+      if (sourceFile) {
+        let start = reference.textSpan.start
+        let length = reference.textSpan.length
+        if(reference.contextSpan){
+          return undefined
+        }
+        // let start = reference.contextSpan?.start || 0
+        let end  =  start + length
+        const  node = this.findNodeByRange(sourceFile,start, end)
+        if(node){
+          referenceNodes.push(node)
+        }
+        return node
+      } else {
+        return undefined
+      }
+    })    
+    referenceNodes = referenceNodes.filter(reference => {
+      if(!reference){
+        return false
+      }
+      if(noSelf){
+        return !(pos >= reference.pos  && pos  <= reference.end)
+      }
+      return true
+    })
+    referenceNodes = unique(referenceNodes)
+    return referenceNodes
+  }
   getReferenceNodes(fileName:string,pos: number,noSelf:boolean = true){
     let references = this.getReferences(fileName,pos);
     let program = this.languageService.getProgram()

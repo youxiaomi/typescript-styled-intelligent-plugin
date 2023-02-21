@@ -275,7 +275,7 @@ export default function extractCssSelectorWorkWrap({ node, languageService, tsHe
 
       //openingElement.getFullText() = '<div className={`container ${this.props.containerClassName || ''}`}>'
       if(openingElement.getFullText().match("this.props.containerClassName")){
-        debugger
+        // debugger
       }
       let identiferNodeDefine = tsHelp.getJsxOpeningElementDefineNode(openingElement);
       let isCustomJsxElement = false
@@ -460,8 +460,14 @@ export default function extractCssSelectorWorkWrap({ node, languageService, tsHe
 					return props;
 				}else{
 					let methodMember = members.find(member => member.name?.getText() == nameText)
-					if(methodMember && methodMember.kind == ts.SyntaxKind.MethodDeclaration){
-						return methodMember
+					if(methodMember){
+            if(methodMember.kind == ts.SyntaxKind.MethodDeclaration){
+              return methodMember
+            }
+            if(methodMember.kind == ts.SyntaxKind.PropertyDeclaration){
+              return (methodMember as ts.PropertyDeclaration).initializer
+            }
+						// return methodMember
 					}
 				}
 			}
@@ -495,7 +501,6 @@ export default function extractCssSelectorWorkWrap({ node, languageService, tsHe
       }
       return
     }
-    type IdentifierResult = ts.Node | Object | undefined
     function isObjectOrObjectLiteral(obj:  CustomObject | ts.Node): obj is (CustomObject |ts.ObjectLiteralExpression){
       return  obj instanceof CustomObject || ts.isObjectLiteralExpression(obj)
     }
@@ -508,6 +513,9 @@ export default function extractCssSelectorWorkWrap({ node, languageService, tsHe
     function getIdentifier(node:ts.Node){
       logger.info(node.getFullText())
       let defNode = tsHelp.getDefinitionNode(node) as (ts.Node);
+      if(!defNode){
+        return
+      }
       logger.info(defNode.getFullText())
       if(ts.isVariableStatement(defNode)){
         const {  declarationList  } = defNode
@@ -952,6 +960,9 @@ export default function extractCssSelectorWorkWrap({ node, languageService, tsHe
         case ts.SyntaxKind.JsxElement:
         case ts.SyntaxKind.JsxSelfClosingElement:
           return extractJsxElement2(node as ts.JsxElement);
+        case ts.SyntaxKind.SyntaxList:
+        case ts.SyntaxKind.JsxFragment:
+          return parseChildren(node.getChildren(),scope)
         case ts.SyntaxKind.JsxAttributes:
           return extractJsxAttributes(node as ts.JsxAttributes);
         case ts.SyntaxKind.JsxExpression:

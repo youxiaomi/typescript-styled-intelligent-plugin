@@ -14,6 +14,7 @@ import  {  TemplateHelper } from '../utils/templateUtil'
 import { createStyleSheetAbstractSyntaxTree, TargetSelector } from '../factory/nodeFactory'
 import { JsxParser, ParentReferenceNode } from './jsxParser'
 import { NodeType } from '../utils/cssNodes'
+import logger from '../service/logger'
 
 export type StyledComponentNode = {
   type: 'styledElement',
@@ -171,7 +172,6 @@ export default class CssSelectorParser{
             let cssDoc = cssService.getDefaultCssTextDocument(formatStyleSheet)
             let styleSheet = cssService.getScssStyleSheet(cssDoc)
   
-            let tsNode = parseCssSelectors[0].tsNode as ts.JsxElement
             // let identiferName = this.tsHelp.getJsxOpeningElementIdentier(tsNode.openingElement)
             // let styledDefintions =  this.tsHelp.getDefinitionLastNodeByIdentiferNode(identiferName!)
             // let { sassText = '',template,TaggedTemplateNode } = this.tsHelp.getStyledTemplateScss(styledDefintions) || {}
@@ -183,7 +183,9 @@ export default class CssSelectorParser{
             // let cssNodes =  cssService.findSelectorTreeBySelector(styleSheet,currentStyledComponentStyleSheet,true);
             let targetTree = createStyleSheetAbstractSyntaxTree(currentStyledComponentStyleSheet)
             let sourceTree = createStyleSheetAbstractSyntaxTree(styleSheet)
-  
+            logger.info('css text')
+            logger.info(currentStyledComponentStyleSheet.getText())
+            logger.info(styleSheet.getText())
             const  { matchSourceNodes,matchTargetNodes } =  cssService.matchCssSelectorNodes(targetTree,sourceTree);
   
             let cssNodes = Array.from(matchTargetNodes).map(item => item.node)
@@ -259,8 +261,8 @@ export default class CssSelectorParser{
 
     if(tagVariableDeclarationNode){
       let referenceNodes = omitUndefined(this.tsHelp.getReferenceNodes(fileName, tagVariableDeclarationNode.pos));
-      referenceNodes = referenceNodes.filter(item => item.kind == ts.SyntaxKind.JsxElement);
-
+      referenceNodes = referenceNodes.map(node => node.parent.parent).filter(item => item.kind == ts.SyntaxKind.JsxElement);
+      referenceNodes = unique(referenceNodes)
       const findDefinition = (referenceNode) => {
         let cssSelectorDomNodes = this.parseCssSelector(referenceNode as ts.JsxElement);
         cssSelectorDomNodes.map(cssSelectorDomNode => {

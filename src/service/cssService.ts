@@ -532,10 +532,11 @@ class ScssService {
           node.children = []
           node.selectors = [selector]
         }else{
-          let hasChildSelector =  node.children?.find(child=>{
+          let children =  node.children?.find(child=>{
             return  findTargetDomSelector(child as JsxElementNode,targetSelector)
           })
-          node.selectors = hasChildSelector ? node.selectors :  []
+          node.selectors = children ? node.selectors :  []
+          node.children = children ? [children] :  []
         }
         return node.selectors.length
       }
