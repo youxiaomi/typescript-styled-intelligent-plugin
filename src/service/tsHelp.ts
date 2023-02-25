@@ -3,7 +3,7 @@
 
 import * as ts from 'typescript/lib/tsserverlibrary'
 import { containerNames } from '../parser/types'
-import { getTaggedLiteralName, getTagName, isTaggedLiteral } from '../utils/templateUtil'
+import { getTaggedLiteralName, getTagName } from '../utils/templateUtil'
 import { omitUndefined, unique } from '../utils/utils'
 
 export default class TsHelp {
@@ -327,99 +327,6 @@ export default class TsHelp {
       return node
     }
     return getTemplateNode(node!)
-  }
-
-
-  getPropertyAccessExpressionObjectLiteral(node:ts.PropertyAccessExpression){
-    let ts = this.typescript
-    const tsHelp = this
-    const { SyntaxKind } = ts
-    const { expression, name} = node
-    let currentExpress = expression
-    let currentName = name
-    let currentNode: ts.Node|undefined
-    const names:ts.MemberName[] = []
-
-
-    if(expression.kind == SyntaxKind.PropertyAccessExpression){
-      return this.getPropertyAccessExpressionObjectLiteral(expression as  ts.PropertyAccessExpression)
-    }else{
-      return getPropertyAccessExpressionObjectLiteral(node)
-    }
-    function getPropertyAccessExpressionObjectLiteral(node: ts.PropertyAccessExpression){
-      const { expression, name} = node
-      // let objectLiteral = getObjectLiteral(expression as ts.Identifier);
-      // const { properties } = objectLiteral
-      // let value = properties.find(property=>{
-      //   return property.name?.getText() == name.getText()
-      // })
-      return getObjectValueByName(expression as ts.Identifier,name)
-    }
-    function getObjectLiteral(identifierNode: ts.Identifier):ts.ObjectLiteralExpression{
-      // let nodeObjectLiteral = getObject(node);
-      let saveNode:ts.Node  = identifierNode;
-      let currentNode:ts.Node = identifierNode
-      while(currentNode && currentNode != saveNode && !ts.isObjectLiteralExpression(currentNode)){
-        saveNode = currentNode
-        currentNode = getObject(currentNode)
-      }
-      return currentNode as ts.ObjectLiteralExpression
-    }
-    function getObjectValueByName(identifierNode: ts.Identifier,name: ts.Node){
-      let objectLiteral = getObjectLiteral(identifierNode);
-      const { properties } = objectLiteral
-      let value = properties.find(property=>{
-        return property.name?.getText() == name.getText()
-      })
-      return value as ts.Node
-    }
-    function  getObject(node):ts.Node{
-      switch (node?.kind) {
-        case SyntaxKind.Identifier:
-          return getIdentifier(node);
-        case SyntaxKind.VariableDeclaration:
-          return getVariableDeclaration(node);
-        case SyntaxKind.VariableStatement:
-          return node
-        default:
-          return node
-      }
-    }
-    function getIdentifier(node:ts.Node){
-      let name = node.getText()
-      let defNode = tsHelp.getDefinitionNode(node) as ts.Node;
-      if(ts.isVariableDeclaration(defNode)){
-        const { name,initializer } = defNode
-        if(ts.isBindingName(name)){
-          return getObjectValueByName(initializer as ts.Identifier,name)
-        }
-      }
-      return defNode as ts.Node
-    }
-
-    function getVariableDeclaration(node: ts.VariableDeclaration){
-      const { initializer, name } = node
-      if(ts.isIdentifier(name)){
-        return  getObject(initializer)
-      }
-      if(ts.isBindingName(name)){
-        let { elements } = name
-        let nodeLiteral = getObject(initializer);
-        if(!nodeLiteral){
-          // return
-        }
-        if(ts.isObjectLiteralExpression(nodeLiteral)){
-
-        }
-        
-      }
-      return node
-    }
-
-    
-
-
-
   }
 }
 

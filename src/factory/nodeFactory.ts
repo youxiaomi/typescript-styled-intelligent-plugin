@@ -5,31 +5,6 @@ import * as CssNode from 'vscode-css-languageservice/lib/umd/parser/cssNodes'
 const { NodeType}  = CssNode
 
 
-
-function createFacotry(){
-
-
-
-
-}
-
-// interface CssSelectorNodeFactory{
-//   kind: CssNode.NodeType
-//   parent: CssSelectorNodeFactory
-//   //多个selector共同决定 .user.boy
-//   selectors:[]
-//   children:[]
-//   siblings:[]
-//   addSibling()
-//   getSiblings():[]
-//   addChild()
-//   getChildren():[]
-//   addSelector()
-//   // addOtherSelector()
-//   // getOtherSelector()
-
-// }
-
 // CssNode.NodeType
 enum CssSelectorNodeType  {
   ClassSelector,
@@ -322,13 +297,8 @@ export function createStyleSheetAbstractSyntaxTree(cssNode: CssNode.Node){
 
 
 class  Selector{
-
   constructor(readonly parent: ts.Node,readonly offset:number,readonly text:string){
-    
   }
-
-
-
 }
 
 
@@ -447,28 +417,7 @@ export class TargetSelector{
       this.selectorText = selector.text
       this.selectorStart = selector.offset
     }
-   
-    
-
-    // let {text,offset } = getSelectorTextInfo(this.node)
-    // offset += this.node.getFullStart()
-    // text.split(' ').forEach(item => {
-    //   if(item == ''){
-    //     ++offset
-    //   }else{
-    //     if(offset <= this.pos && this.pos <= (offset+ item.length)){
-    //       this.selectorText = item
-    //       this.selectorStart = offset
-    //     }
-    //     // this.selectors.push(new DomSelector(offset,this.node))
-    //     offset += item.length
-    //   }
-    // })
   }
-
-
-
-
 }
 
 
@@ -512,19 +461,4 @@ export class JsxElementNode  {
   get text(){
     return  this.tsNode.getText()
   }
-}
-
-export class CallExpressionChain {
-  parent?: CallExpressionChain
-  constructor(readonly callExpression:ts.CallExpression){
-
-
-  }
-  setParent(parent?:CallExpressionChain){
-    this.parent = parent
-  }
-
-
-
-
 }

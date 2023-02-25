@@ -14,7 +14,9 @@ const getAge = ()=>{
 
 
 var User2  = styled.div`
+  .user22{
 
+  }
 
 
 `
@@ -102,7 +104,7 @@ var User9999 = ()=>{
 
 
 // var User = styled.div`
-var User = styled(User2)`
+export var User = styled(User2)`
   .b123{
     .user666{}
   }

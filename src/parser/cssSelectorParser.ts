@@ -10,11 +10,11 @@ import { findResult, flatten, omitUndefined, unique } from '../utils/utils'
 import extractCssWork from './extractCssSelector'
 import * as CssNode from 'vscode-css-languageservice/lib/umd/parser/cssNodes'
 import { extractStyleSheetSelectorWorkWrap } from './extractStyleSheet'
-import  {  TemplateHelper } from '../utils/templateUtil'
 import { createStyleSheetAbstractSyntaxTree, TargetSelector } from '../factory/nodeFactory'
 import { JsxParser, ParentReferenceNode } from './jsxParser'
-import { NodeType } from '../utils/cssNodes'
+import * as Nodes from 'vscode-css-languageservice/lib/umd/parser/cssNodes'
 import logger from '../service/logger'
+const NodeType = Nodes.NodeType
 
 export type StyledComponentNode = {
   type: 'styledElement',
@@ -46,14 +46,6 @@ export default class CssSelectorParser{
     return extractCssWork({
       node,languageService,tsHelp:this.tsHelp,typescript: this.typescript
     })
-    // const extractSelectorNode =  extractCssSelectorWorkWrap({
-    //   node,languageService,tsHelp:this.tsHelp,typescript: this.typescript
-    // })
-
-    // console.log(extractSelectorNode)
-    // let aa = this.flatClassNameChildrenNodes(extractSelectorNode)
-    // console.log(aa);
-    return []
   }
   /**
    * 获取某个字符串的存在的styledComponent组件节点
@@ -91,59 +83,9 @@ export default class CssSelectorParser{
         length: targetSelector.selectorText.length
       }
     }
-    // let references = this.languageService.getReferencesAtPosition(fileName,pos)
-    
-    // references?.map(reference=>{
-    //   let sourceFile = program?.getSourceFile(reference.fileName)
-    //   let node = this.tsHelp.findNode(sourceFile!, reference.textSpan.start)
-    //   console.log(node);
-    // })
   }
 
-  // flatClassNameChildrenNodes(node){
-  //   // wait optmize
-  //   // const flatArrayFn = flatten
-  //   const flatArrayFn = (node)=>{
-  //     let flatArray:any = []
-  //     if(Array.isArray(node)){
-  //       node.map((item)=>{
-  //         let flatItem = flattenNodes(item)
-  //         if(Array.isArray(flatItem)){
-  //           flatArray = [...flatArray,...flatItem]
-  //         }else{
-  //           flatArray = [...flatArray,flatItem]
-  //         }
-  //       })
-  //       return flatArray
-  //     }else{
-  //       return node
-  //     }
-  //   }
-  //   const flattenNodes = (node)=>{
-  //     let ts = this.typescript
-  //     if(node.tsNode && node.tsNode.kind == ts.SyntaxKind.JsxElement){
-  //       let arrays = node.children || []
-  //       let className = node.className || []
-  //       let flatArray:any[] = []
-  //       arrays.map((item)=>{
-  //         let flatItem = flattenNodes(item)
-  //         if(Array.isArray(flatItem)){
-  //           flatArray = [...flatArray,...flatItem]
-  //         }else{
-  //           flatArray = [...flatArray,flatItem]
-  //         }
-  //       })
-  //       node.children = flatArray
-  //       node.className = flatArrayFn(className)
-  //       return node
-  //     }else{
-  //       return flatArrayFn(node)
-  //     } 
-  //   }
 
-  //   return flattenNodes(node)
-
-  // }
   /**
    * 从js语法中提取styleSheet中css selector
    * 
@@ -156,88 +98,64 @@ export default class CssSelectorParser{
     let ts = this.typescript
     const getCandidateSelector = (node:ParentReferenceNode)=>{
       let result: ts.DefinitionInfo[] = []
-
-
-      if(node.type == 'styledElement'){
-        let { sassText, template,TaggedTemplateNode  } = this.tsHelp.getStyledTemplateScss(node.referenceNode) || {}
-        // if(sassText && sassText.match(targetSelector.selectorText)){
-          // let parseCssSelectors = this.parseCssSelector(node.tsNode as ts.JsxElement)
-          let parseCssSelectors = this.parseCssSelector(node.tsNode as ts.JsxElement);
-          let cssService = getScssService();
-          let definitions: ts.DefinitionInfo[] = []
-          parseCssSelectors.forEach(parseCssSelector=>{
-            let cssScan = cssService.getStyleSheetScanByJsxElementNode(parseCssSelector,targetSelector);
-            // new TemplateStringContext();
-            let formatStyleSheet = cssService.fromatText(cssService.getDefaultCssTextDocument(cssScan.getText()))
-            let cssDoc = cssService.getDefaultCssTextDocument(formatStyleSheet)
-            let styleSheet = cssService.getScssStyleSheet(cssDoc)
-  
-            // let identiferName = this.tsHelp.getJsxOpeningElementIdentier(tsNode.openingElement)
-            // let styledDefintions =  this.tsHelp.getDefinitionLastNodeByIdentiferNode(identiferName!)
-            // let { sassText = '',template,TaggedTemplateNode } = this.tsHelp.getStyledTemplateScss(styledDefintions) || {}
-            let context = new TemplateStringContext(template!,this.tsHelp,this.typescript)
-            let doc = cssService.generateCssTextDocument(context)
-            let currentStyledComponentStyleSheet = cssService.getScssStyleSheet(doc)
-            // let cssNodes =  cssService.findSelectorTreeBySelector(currentStyledComponentStyleSheet,styleSheet);
-            //
-            // let cssNodes =  cssService.findSelectorTreeBySelector(styleSheet,currentStyledComponentStyleSheet,true);
-            let targetTree = createStyleSheetAbstractSyntaxTree(currentStyledComponentStyleSheet)
-            let sourceTree = createStyleSheetAbstractSyntaxTree(styleSheet)
-            logger.info('css text')
-            logger.info(currentStyledComponentStyleSheet.getText())
-            logger.info(styleSheet.getText())
-            const  { matchSourceNodes,matchTargetNodes } =  cssService.matchCssSelectorNodes(targetTree,sourceTree);
-  
-            let cssNodes = Array.from(matchTargetNodes).map(item => item.node)
-            cssNodes = unique(cssNodes,(pre,current)=>pre.offset == current.offset);
-            cssNodes = cssNodes.filter(item => {
-              let selectorText = item.getText()
-  
-              if([NodeType.ClassSelector,NodeType.IdentifierSelector].includes(item.type)){
-                selectorText = selectorText.slice(1)
-              }
-              return selectorText == targetSelector.selectorText
-            })
-            let fileName = context.getFileName();
-            cssNodes.map(node=>{
-              let def =  {
-                fileName,
-                kind: ts.ScriptElementKind.string,
-                name:'',
-                containerKind: ts.ScriptElementKind.string,
-                containerName:'',
-                textSpan:{
-                  // start: doc.getOffsetInFile(cssService.getSelectorIdentierOffset(node)),
-                  start: doc.getOffsetInFile(node.offset),
-                  length: node.length
-                }
-              }
-              definitions.push(def)
-            })
-          })
-
-          console.log(definitions);
-          result = result.concat(definitions)
-          // let candidateSelectors = findCandidateSelector(parseCssSelectors)
-          // result = result.concat(candidateSelectors)
-        // }
+      if (node.type != 'styledElement') {
+        return []
       }
-      // all parent styledElement
-      // if(node.parent && Array.isArray(node.parent)){
-      //   node.parent.forEach((node)=>{
-      //     let candidateSelectors =  getCandidateSelector(node)
-      //     result = result.concat(candidateSelectors)
-      //   })
-      // }
+      let { sassText, template, TaggedTemplateNode } = this.tsHelp.getStyledTemplateScss(node.referenceNode) || {}
+      let parseCssSelectors = this.parseCssSelector(node.tsNode as ts.JsxElement);
+      let cssService = getScssService();
+      let definitions: ts.DefinitionInfo[] = []
+      parseCssSelectors.forEach(parseCssSelector => {
+        let cssScan = cssService.getStyleSheetScanByJsxElementNode(parseCssSelector, targetSelector);
+        // new TemplateStringContext();
+        let formatStyleSheet = cssService.fromatText(cssService.getDefaultCssTextDocument(cssScan.getText()))
+        let cssDoc = cssService.getDefaultCssTextDocument(formatStyleSheet)
+        let styleSheet = cssService.getScssStyleSheet(cssDoc)
+        let context = new TemplateStringContext(template!, this.tsHelp, this.typescript)
+        let doc = cssService.generateCssTextDocument(context)
+        let currentStyledComponentStyleSheet = cssService.getScssStyleSheet(doc)
+        let targetTree = createStyleSheetAbstractSyntaxTree(currentStyledComponentStyleSheet)
+        let sourceTree = createStyleSheetAbstractSyntaxTree(styleSheet)
+        logger.info('css text')
+        logger.info(currentStyledComponentStyleSheet.getText())
+        logger.info(styleSheet.getText())
+        const { matchSourceNodes, matchTargetNodes } = cssService.matchCssSelectorNodes(targetTree, sourceTree);
+        let cssNodes = Array.from(matchTargetNodes).map(item => item.node)
+        cssNodes = unique(cssNodes, (pre, current) => pre.offset == current.offset);
+        cssNodes = cssNodes.filter(item => {
+          let selectorText = item.getText()
+          if ([NodeType.ClassSelector, NodeType.IdentifierSelector].includes(item.type)) {
+            selectorText = selectorText.slice(1)
+          }
+          return selectorText == targetSelector.selectorText
+        })
+        let fileName = context.getFileName();
+        cssNodes.map(node => {
+          let def = {
+            fileName,
+            kind: ts.ScriptElementKind.string,
+            name: '',
+            containerKind: ts.ScriptElementKind.string,
+            containerName: '',
+            textSpan: {
+              // start: doc.getOffsetInFile(cssService.getSelectorIdentierOffset(node)),
+              start: doc.getOffsetInFile(node.offset),
+              length: node.length
+            }
+          }
+          definitions.push(def)
+        })
+      })
+
+      console.log(definitions);
+      result = result.concat(definitions)
       return result
     }
 
 
     let definitions = flatten(styledComponentNode.reverse().map(getCandidateSelector))
-    //候选selector
 
     return definitions
-    // getScssService
 
   }
 
@@ -247,7 +165,6 @@ export default class CssSelectorParser{
     let cssService = getScssService()
     let ts = this.typescript
    
-    // let templateNode = this.tsHelp.findNode(sourceFile!,position)
     let templateNode = this.tsHelp.getTemplateNode(sourceFile!,position)
     let templateStringContext = new TemplateStringContext(templateNode as ts.TemplateLiteral,this.tsHelp,this.typescript)
     let cssTextDocument = cssService.generateCssTextDocument(templateStringContext);
@@ -314,67 +231,4 @@ export default class CssSelectorParser{
 
 
   }
-
-
-
 }
-export function findNode(
-  typescript: typeof ts,
-  sourceFile: ts.SourceFile,
-  position: number
-): ts.Node | undefined {
-  function find(node: ts.Node): ts.Node | undefined {
-      if (position >= node.getStart() && position < node.getEnd()) {
-          return typescript.forEachChild(node, find) || node;
-      }
-  }
-  return find(sourceFile);
-}
-
-// containerKind:
-// undefined
-// containerName:
-// ''
-// contextSpan:
-// {start: 533, length: 158}
-// failedAliasResolution:
-// false
-// fileName:
-// 'example/index.tsx'
-// isAmbient:
-// false
-// isLocal:
-// true
-// kind:
-// 'function'
-// name:
-// 'ShowMemeber'
-// textSpan:
-// {start: 519, length: 11}
-// unverified:
-// false
-
-
-
-// containerKind:
-// undefined
-// containerName:
-// 'JSX.IntrinsicElements'
-// contextSpan:
-// {start: 141545, length: 83}
-// failedAliasResolution:
-// false
-// fileName:
-// 'example/node_modules/@types/react/index.d.ts'
-// isAmbient:
-// true
-// isLocal:
-// false
-// kind:
-// 'property'
-// name:
-// 'div'
-// textSpan:
-// {start: 141545, length: 3}
-// unverified:
-// false

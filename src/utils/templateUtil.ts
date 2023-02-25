@@ -1,7 +1,7 @@
 import * as ts from 'typescript/lib/tsserverlibrary';
 
 
-export * from './_teamplteUtil'
+// export * from './_teamplteUtil'
 
 export function escapeRegExp(string: string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
