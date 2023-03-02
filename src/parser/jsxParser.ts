@@ -107,7 +107,7 @@ class IterateParentParser extends AbstractParser{
     let { isAllParent = false } = options || {}
     let parentReferenceNodes:ParentReferenceNode[] = []
     let nodes:ParentReferenceNode[] = [{tsNode: node, type:'node'}];
-    while(nodes.length){
+    while(nodes.length && parentReferenceNodes.length < 6){
       let currentNode = nodes.shift()
       logger.info(currentNode?.tsNode.getFullText())
       if(currentNode){

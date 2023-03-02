@@ -242,7 +242,13 @@ class ScssService {
         })
         if(selector){
           node.children = []
-          node.selectors = [selector]
+          let eleSelector = node.selectors.find(selector =>selector.type == 'elementSelector')
+          if(eleSelector){
+            node.selectors = [eleSelector,selector]
+          }else{
+            node.selectors = [selector]
+          }
+         
         }else{
           let children =  node.children?.find(child=>{
             return  findTargetDomSelector(child as JsxElementNode,targetSelector)

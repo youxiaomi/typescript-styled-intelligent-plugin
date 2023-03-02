@@ -141,9 +141,6 @@ class ExtractCssSelectorWorkScope implements ExtractCssSelectorWorkScopeInterfac
   getJsxElementNode(){
     return this.getParentScopeProp('jsxElementNode')
   }
-  isChildStage(){
-    return this.getCurrentStage() == runtimeStage.children
-  }
   isJsxAttrStage(){
     return this.getCurrentStage() == runtimeStage.jsxAttr
   }

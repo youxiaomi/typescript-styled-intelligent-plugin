@@ -67,12 +67,12 @@ export default class CssSelectorParser{
 
     const jsxParser = new JsxParser(this.typescript,this.languageService,this.tsHelp)
     let styledComponentNode  = jsxParser.findStyledNodeOfParent(node)
-    if(!styledComponentNode){
+    if(!styledComponentNode.length){
       // jsxParser.findStyledNodeOfParent(node)
       return
     }
     // let styledComponentNode = findStyledNode(node) || []
-    let definitions = this.getSelectors(styledComponentNode, targetSelector);
+    let definitions = this.getSelectors([ts.last(styledComponentNode)], targetSelector);
     if(!definitions.length){
       return undefined
     }
@@ -116,7 +116,6 @@ export default class CssSelectorParser{
         let currentStyledComponentStyleSheet = cssService.getScssStyleSheet(doc)
         let targetTree = createStyleSheetAbstractSyntaxTree(currentStyledComponentStyleSheet)
         let sourceTree = createStyleSheetAbstractSyntaxTree(styleSheet)
-        logger.info('css text')
         logger.info(currentStyledComponentStyleSheet.getText())
         logger.info(styleSheet.getText())
         const { matchSourceNodes, matchTargetNodes } = cssService.matchCssSelectorNodes(targetTree, sourceTree);
@@ -151,10 +150,7 @@ export default class CssSelectorParser{
       result = result.concat(definitions)
       return result
     }
-
-
     let definitions = flatten(styledComponentNode.reverse().map(getCandidateSelector))
-
     return definitions
 
   }
@@ -172,63 +168,58 @@ export default class CssSelectorParser{
     let {styleSheet: targetStyleSheet,targetNode } = extractStyleSheetSelectorWorkWrap(templateNodeStyleSheet,position,cssTextDocument) || {};
     
     const definitions: ts.DefinitionInfo[] = []
-    // let matchStyleSheet = extractStyleSheetSelectorWorkWrap(templateNodeStyleSheet,position)
-    // console.log(templateNode);
     let tagVariableDeclarationNode = this.tsHelp.getTagVariableDeclarationNode(templateNode)
-
-    if(tagVariableDeclarationNode){
-      let referenceNodes = omitUndefined(this.tsHelp.getReferenceNodes(fileName, tagVariableDeclarationNode.pos));
-      referenceNodes = referenceNodes.map(node => node.parent.parent).filter(item => item.kind == ts.SyntaxKind.JsxElement);
-      referenceNodes = unique(referenceNodes)
-      const findDefinition = (referenceNode) => {
-        let cssSelectorDomNodes = this.parseCssSelector(referenceNode as ts.JsxElement);
-        cssSelectorDomNodes.map(cssSelectorDomNode => {
-          if (cssSelectorDomNode.type == 'styledElement') {
-            let { children = [], selectors = [] } = cssSelectorDomNode
-            let cssScan = cssService.getStyleSheetScanByJsxElementNode(cssSelectorDomNode);
-            let cssText = cssScan.getText()
-            let cssdoc = cssService.getDefaultCssTextDocument(cssText)
-            let styleSheet = cssService.getScssStyleSheet(cssdoc);
-
-            // let result = cssService.findSelectorTreeBySelector(targetStyleSheet!,styleSheet) 
-            let targetTree = createStyleSheetAbstractSyntaxTree(targetStyleSheet!)
-            let sourceTree = createStyleSheetAbstractSyntaxTree(styleSheet)
-            let {matchSourceNodes,matchTargetNodes} = cssService.matchCssSelectorNodes(targetTree,sourceTree,true)
-            let result = Array.from(matchSourceNodes).map(item => item.node)
-            result.forEach(res => {
-              let textNode = cssScan.getTextNode(cssdoc.getOffsetInFile(res.offset))
-              if (textNode?.node.type =="classNameSelector" || textNode?.node.type == "idSelector") {
-                let node = textNode.node
-                let tsNode = textNode?.node.tsNode
-                let fileName = tsNode.getSourceFile().fileName
-                definitions.push({
-                  fileName: fileName,
-                  kind: ts.ScriptElementKind.string,
-                  name: '',
-                  containerKind: ts.ScriptElementKind.variableElement,
-                  containerName: '',
-                  textSpan: {
-                    start: node.offset,
-                    length: node.text.length,
-                  }
-                })
-              }
-            })
-          }
-        })
-      }
-      referenceNodes.map(findDefinition)
-      const definitionInfo: ts.DefinitionInfoAndBoundSpan = {
-        definitions:definitions,
-        textSpan:{
-          start: cssTextDocument.getOffsetInFile(targetNode?.offset || 0),
-          length: targetNode?.getText().length || 0,
-        }
-      }
-      return definitionInfo
+    if(!tagVariableDeclarationNode){
+      return undefined
     }
-    return undefined
-
-
+    let referenceNodes = omitUndefined(this.tsHelp.getReferenceNodes(fileName, tagVariableDeclarationNode.pos));
+    referenceNodes = omitUndefined(referenceNodes.map(this.tsHelp.getJsxElementOfIdentifer))
+    referenceNodes = unique(referenceNodes)
+    const findDefinition = (referenceNode) => {
+      let cssSelectorDomNodes = this.parseCssSelector(referenceNode as ts.JsxElement);
+      cssSelectorDomNodes.map(cssSelectorDomNode => {
+        if (cssSelectorDomNode.type == 'styledElement') {
+          let cssScan = cssService.getStyleSheetScanByJsxElementNode(cssSelectorDomNode);
+          let cssText = cssScan.getText()
+          let cssdoc = cssService.getDefaultCssTextDocument(cssText)
+          let styleSheet = cssService.getScssStyleSheet(cssdoc);
+          let targetTree = createStyleSheetAbstractSyntaxTree(targetStyleSheet!)
+          let sourceTree = createStyleSheetAbstractSyntaxTree(styleSheet)
+          let { matchSourceNodes, matchTargetNodes } = cssService.matchCssSelectorNodes(targetTree, sourceTree, true)
+          let result = Array.from(matchSourceNodes).map(item => item.node)
+          result.forEach(res => {
+            let textNode = cssScan.getTextNode(cssdoc.getOffsetInFile(res.offset))
+            if (textNode?.node.type == "classNameSelector" || textNode?.node.type == "idSelector") {
+              let node = textNode.node
+              let tsNode = textNode?.node.tsNode
+              let fileName = tsNode.getSourceFile().fileName
+              definitions.push({
+                fileName: fileName,
+                kind: ts.ScriptElementKind.string,
+                name: '',
+                containerKind: ts.ScriptElementKind.variableElement,
+                containerName: '',
+                textSpan: {
+                  start: node.offset,
+                  length: node.text.length,
+                }
+              })
+            }
+          })
+        }
+      })
+    }
+    referenceNodes.map(findDefinition)
+    if(!definitions.length){
+      return undefined
+    }
+    const definitionInfo: ts.DefinitionInfoAndBoundSpan = {
+      definitions: definitions,
+      textSpan: {
+        start: cssTextDocument.getOffsetInFile(targetNode?.offset || 0),
+        length: targetNode?.getText().length || 0,
+      }
+    }
+    return definitionInfo
   }
 }

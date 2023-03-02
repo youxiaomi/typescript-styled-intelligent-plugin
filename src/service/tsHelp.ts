@@ -96,18 +96,28 @@ export default class TsHelp {
       if (sourceFile) {
         let start = reference.textSpan.start
         let length = reference.textSpan.length
+        let end  =  start + length
         if(!reference.contextSpan){
-          return undefined
+          let   node = this.findNodeByRange(sourceFile,start, end)
+          let parent = node?.parent
+          if(parent){
+            if(ts.isPropertyAssignment(parent) || ts.isVariableDeclaration(parent)){
+              let _referenceNodes = this.getReferenceNodes(parent.name.getSourceFile().fileName, parent.name.getStart(), noSelf)
+              referenceNodes = [...referenceNodes,..._referenceNodes]
+              return
+            }
+          }
+          node && referenceNodes.push(node)
+          return
           // start =  reference.contextSpan?.start || 0 
           // length = reference.contextSpan?.length || 0
+        }else{
+          const  node = this.findNodeByRange(sourceFile,start, end)
+          if(node){
+            referenceNodes.push(node)
+          }
+          return node
         }
-        // let start = reference.contextSpan?.start || 0
-        let end  =  start + length
-        const  node = this.findNodeByRange(sourceFile,start, end)
-        if(node){
-          referenceNodes.push(node)
-        }
-        return node
       } else {
         return undefined
       }
@@ -132,11 +142,15 @@ export default class TsHelp {
   }
   getDefinitionNodes(fileName:string,pos:number){
     let definitions = this.getDefinition(fileName,pos)
-    let program = this.languageService.getProgram()
+    let program = this.languageService.getProgram();
+
     let nodes = definitions.map(definition =>{
       let sourceFile = program?.getSourceFile(definition.fileName)
       if (sourceFile) {
         if(!definition.contextSpan){
+          if(!definition.isAmbient && definition.name == 'default'){
+            return this.findNodeByRange(sourceFile,definition.textSpan.start, definition.textSpan.start+definition.textSpan.length)
+          }
           return undefined
         }
         let start = definition.contextSpan?.start || definition.textSpan.start || 0
@@ -237,12 +251,22 @@ export default class TsHelp {
       let resNode = getOpentingElementIdentifer(expression);
       if (resNode && resNode.kind == ts.SyntaxKind.ObjectLiteralExpression) {
         let { properties } = (resNode as ts.ObjectLiteralExpression)
-        return properties.find(property => {
+        let property = properties.find(property => {
           return property.name?.getText() == name.getText()
         })
+        if(property){
+          if(ts.isShorthandPropertyAssignment(property)){
+            return getOpentingElementIdentifer(property.name)
+          }
+          if(ts.isPropertyAssignment(property)){
+            return getOpentingElementIdentifer(property.initializer)
+          }
+        }
+        return property
       }
     }
     function getIdentifer(node: ts.Identifier) {
+      //TODO property cross files 
       let defineNode = ts.last(tsHelp.getDefinitionNodes(node.getSourceFile().fileName, node.getStart()));
       return getOpentingElementIdentifer(defineNode)
     }
@@ -251,15 +275,19 @@ export default class TsHelp {
       switch (node?.kind) {
         case ts.SyntaxKind.VariableStatement:
         case ts.SyntaxKind.FirstStatement:
-          return getOpentingElementIdentifer(ts.last((node as ts.VariableStatement).declarationList.declarations));
+          let _node = getOpentingElementIdentifer(ts.last((node as ts.VariableStatement).declarationList.declarations));
+          if(_node && ts.isTaggedTemplateExpression(_node)){
+            return node
+          }
+          return _node
         case ts.SyntaxKind.VariableDeclaration:
           return getOpentingElementIdentifer(node.initializer)
         case ts.SyntaxKind.Identifier:
           return getIdentifer(node)
         case ts.SyntaxKind.PropertyAccessExpression:
           return getPropertyAccessExpression(node as ts.PropertyAccessExpression)
-        // case ts.SyntaxKind.ObjectLiteralExpression:
-        //   return getPropertyAccessExpression(node as ts.ObjectLiteralExpression)
+        case ts.SyntaxKind.ExportAssignment:
+          return node.expression
         default:
           return node
       }
@@ -327,6 +355,17 @@ export default class TsHelp {
       return node
     }
     return getTemplateNode(node!)
+  }
+  getJsxElementOfIdentifer(node: ts.Node){
+    if(ts.isIdentifier(node)){
+      if(ts.isJsxOpeningElement(node.parent)){
+        return node.parent.parent
+      }
+      if(ts.isPropertyAccessExpression(node.parent) && ts.isJsxOpeningElement(node.parent.parent)){
+        return node.parent.parent.parent
+      }
+    }
+    return undefined
   }
 }
 

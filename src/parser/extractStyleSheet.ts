@@ -39,33 +39,6 @@ export function extractStyleSheetSelectorWorkWrap(styleSheet:Nodes.Stylesheet,po
     }
     
   }
-  // function extractIdentifier(node: Nodes.Identifier) {
-  //   if(node.offset <= position && position <= node.offset + node.length){
-  //     return
-  //   }
-  //   // return {
-  //   //   cssNode: node,
-  //   // }
-  // }
-  // function extractIdentifierSelector(node: Node) {
-  
-  //   return {
-  //     cssNode: node,
-  //   }
-  // }
-  
-  // function extractClass(node: Node) {
-  //   // let {  getSelectors,getDeclarations } = node
-  //   let children = node.getChildren()
-  //   // return children.map(extractStyleSheetSelectorWork)
-  // }
-  // // function extractDeclarations(node: Nodes.RuleSet) {
-  // //   let children = node.getChildren()
-
-
-  
-  //   return children.map(extractStyleSheetSelectorWork)
-  // }
   function extractRuleset(node: Nodes.RuleSet) {
     const selectors = node.getSelectors().getChildren()
     const declarations = cssService.getRulesetsOfDeclartions(node.getDeclarations())
