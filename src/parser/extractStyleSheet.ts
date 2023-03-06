@@ -22,7 +22,7 @@ export function extractStyleSheetSelectorWorkWrap(styleSheet:Nodes.Stylesheet,po
     let child =  children.find((node)=>extractSimpleSelector(node as Nodes.SimpleSelector));
     let text = node.getText()
     if(child){
-      let _text = text.slice(0,child.offset+ child.length)
+      // let _text = text.slice(0,child.offset+ child.length)
       return text.slice(0,child.offset+ child.length) + '{}'
     }
     return undefined

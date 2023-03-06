@@ -13,7 +13,10 @@ export default class TsHelp {
   }
   typescript:typeof ts
   languageService: ts.LanguageService
-  isInReferenceNode = (referenceNode:ts.ReferenceEntry,pos)=>{
+  isInReferenceNode = (referenceNode:ts.ReferenceEntry,fileName:string,pos)=>{
+    if(referenceNode.fileName != fileName){
+      return false
+    }
     let start = referenceNode.contextSpan?.start || referenceNode.textSpan.start
     let end = start + (referenceNode.contextSpan?.length || referenceNode.textSpan.length)
     return start <= pos && end >= pos
@@ -44,7 +47,7 @@ export default class TsHelp {
   getReferences(fileName,pos:number,noSelf:boolean = true){
     let references =  this.languageService.getReferencesAtPosition(fileName,pos) || []
     return references.filter(reference=>{
-      if(noSelf && this.isInReferenceNode(reference,pos)){
+      if(noSelf && this.isInReferenceNode(reference,fileName,pos)){
         return false
       }
       return reference
@@ -130,7 +133,10 @@ export default class TsHelp {
         return false
       }
       if(noSelf){
-        return !(pos >= reference.pos  && pos  <= reference.end)
+        if(reference.getSourceFile().fileName != fileName){
+          return true
+        }
+        return  !(pos >= reference.pos  && pos  <= reference.end)
       }
       return true
     })
@@ -348,6 +354,7 @@ export default class TsHelp {
         case ts.SyntaxKind.TemplateHead:
           return node.parent;
         case ts.SyntaxKind.LastTemplateToken:
+        case ts.SyntaxKind.TemplateMiddle:
           return getTemplateNode(node.parent);
         case ts.SyntaxKind.TemplateSpan:
           return getTemplateNode(node.parent)

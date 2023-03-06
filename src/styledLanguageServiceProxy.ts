@@ -38,15 +38,18 @@ export default class StyledLanguageServiceProxy {
     const tsHelp = new TsHelp(this.typescript, this.languageService);
 
     const cssSelectorParse = new CssSelectorParser(this.typescript, this.languageService, tsHelp);
+    let context = this.helper.getTemplate(fileName,position)
     try{
-      let result =  cssSelectorParse.getStyledComponentNode(fileName, position)
-      if(result){
-        return result
+      if(!context){
+        let result =  cssSelectorParse.getStyledComponentNode(fileName, position)
+        if(result){
+          return result
+        }
       }
+     
     }catch(e:any){
       console.log('error---',e.stack);
     }
-    let context = this.helper.getTemplate(fileName,position)
     if(!context){
       return
     }

@@ -246,7 +246,11 @@ export function createStyleSheetAbstractSyntaxTree(cssNode: CssNode.Node){
   function StylesheetHandler(node: CssNode.Stylesheet){
     let ruleSet = node.getChild(0) as CssNode.RuleSet
     let children = node.getChildren()
-    let rootNode = node.getChildren()[0].getChildren()[0].getChildren()[0].getChildren()[0].getChildren()[0]
+    // let rootNode = node.getChildren()[0].getChildren()[0].getChildren()[0].getChildren()[0].getChildren()[0]
+    let rootNode = getRootNode(ruleSet)
+    if(!rootNode){
+      throw new Error(`rootnode  not found`)
+    }
     let currentType =typeMap[rootNode.type]
     if(!currentType){
       throw new Error(`css node type ${children[0].type} not found`)
@@ -258,6 +262,12 @@ export function createStyleSheetAbstractSyntaxTree(cssNode: CssNode.Node){
     })
     // Ruleset(children[0] as any,[parent])
     return parent
+    function getRootNode(node: CssNode.RuleSet){
+      let selector = node.getSelectors().getChildren()[0]
+      let simpleSelector = selector.getChild(0);
+      let rootNode = simpleSelector?.getChild(0)
+      return rootNode
+    }
   }
   function Ruleset(ruleSet: CssNode.RuleSet,parents:CssSelectorNode[]){
     let children = ruleSet.getSelectors().getChildren()

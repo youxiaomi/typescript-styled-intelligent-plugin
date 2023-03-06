@@ -242,13 +242,13 @@ class ScssService {
         })
         if(selector){
           node.children = []
-          let eleSelector = node.selectors.find(selector =>selector.type == 'elementSelector')
-          if(eleSelector){
-            node.selectors = [eleSelector,selector]
-          }else{
-            node.selectors = [selector]
-          }
-         
+          // let eleSelector = node.selectors.find(selector =>selector.type == 'elementSelector')
+          // if(eleSelector){
+          //   node.selectors = [eleSelector,selector]
+          // }else{
+          //   node.selectors = [selector]
+          // }
+          // node.selectors = [selector]
         }else{
           let children =  node.children?.find(child=>{
             return  findTargetDomSelector(child as JsxElementNode,targetSelector)
@@ -373,17 +373,14 @@ class ScssService {
         let sourceCssNode = sourceNode.node
         let targetCssNode = targetNode.node
         let isSame = targetCssNode.type == sourceCssNode.type && sourceNode.nodeText == targetNode.nodeText
-        if (isSame && (targetNode.siblings.size || sourceNode.siblings.size)) {
-          if (targetNode.siblings.size != sourceNode.siblings.size) {
-            isSame = false
-          } else {
-            let targetSiblings = Array.from(targetNode.siblings)
-            for (let sibling of sourceNode.siblings) {
-              let notFound = !targetSiblings.find(targetSibling => targetSibling.nodeText == sibling.nodeText)
-              if (notFound) {
-                isSame = false
-                break
-              }
+        let sourceSiblings = Array.from(sourceNode.parent?.children || []);
+        if (isSame && targetNode.siblings.size) {
+          let targetSiblings = Array.from(targetNode.siblings)
+          for (let sibling of targetSiblings) {
+            let notFound = !sourceSiblings.find(sourceSibling => sourceSibling.nodeText == sibling.nodeText)
+            if (notFound) {
+              isSame = false
+              break
             }
           }
         }

@@ -11,6 +11,7 @@
     "strict": true,                                      /* Enable all strict type-checking options. */
     "skipLibCheck": true,                                /* Skip type checking all .d.ts files. */
     "noImplicitAny": false,
+    // "allowJs": true
     // "typeRoots": ["./typings","./node_modules/@types"]
   }
 }

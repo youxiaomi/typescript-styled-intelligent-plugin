@@ -3,10 +3,10 @@
 import styled  from "styled-components";
 
 const Shop = styled.div`
-  &.shop{
-    
+  &.shop,.user{
+    .user{}
   }
-  .user{
+  .user.b123,.user3{
 
   }
   .user{
