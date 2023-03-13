@@ -47,10 +47,7 @@ export default class CssSelectorParser{
       node,languageService,tsHelp:this.tsHelp,typescript: this.typescript
     })
   }
-  /**
-   * 获取某个字符串的存在的styledComponent组件节点
-   */
-  getStyledComponentNode = (fileName: string,pos:number):ts.DefinitionInfoAndBoundSpan | undefined=>{
+  getStyledTemplateSelectorByDomSelector = (fileName: string,pos:number):ts.DefinitionInfoAndBoundSpan | undefined=>{
     let program = this.languageService.getProgram()
     let sourceFile = program?.getSourceFile(fileName);
     if(!sourceFile){
@@ -64,14 +61,11 @@ export default class CssSelectorParser{
       return undefined
     }
     let targetSelector = new TargetSelector(node, pos,this.typescript)
-
     const jsxParser = new JsxParser(this.typescript,this.languageService,this.tsHelp)
     let styledComponentNode  = jsxParser.findStyledNodeOfParent(node)
     if(!styledComponentNode.length){
-      // jsxParser.findStyledNodeOfParent(node)
       return
     }
-    // let styledComponentNode = findStyledNode(node) || []
     let definitions = this.getSelectors([ts.last(styledComponentNode)], targetSelector);
     if(!definitions.length){
       return undefined
@@ -91,10 +85,6 @@ export default class CssSelectorParser{
    * 
    */
   getSelectors = (styledComponentNode:ParentReferenceNode[],targetSelector:TargetSelector)=>{
-    // let isElement = (node:JsxElementNode)=>{
-    //   return node.type == 'styledElement' || node.type == 'intrinsicElements'
-    // }
-    // console.log(styledComponentNode);
     let ts = this.typescript
     const getCandidateSelector = (node:ParentReferenceNode)=>{
       let result: ts.DefinitionInfo[] = []
@@ -155,7 +145,7 @@ export default class CssSelectorParser{
 
   }
 
-  getSelectorCandidateByCssNode(fileName: string, position: number):ts.DefinitionInfoAndBoundSpan | undefined{
+  getDomSelectorByStyledTemplateSelector(fileName: string, position: number):ts.DefinitionInfoAndBoundSpan | undefined{
     let program = this.languageService.getProgram()
     let sourceFile = program?.getSourceFile(fileName);
     let cssService = getScssService()

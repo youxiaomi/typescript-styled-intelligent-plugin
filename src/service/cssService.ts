@@ -242,13 +242,7 @@ class ScssService {
         })
         if(selector){
           node.children = []
-          // let eleSelector = node.selectors.find(selector =>selector.type == 'elementSelector')
-          // if(eleSelector){
-          //   node.selectors = [eleSelector,selector]
-          // }else{
-          //   node.selectors = [selector]
-          // }
-          // node.selectors = [selector]
+          return true
         }else{
           let children =  node.children?.find(child=>{
             return  findTargetDomSelector(child as JsxElementNode,targetSelector)
@@ -256,7 +250,7 @@ class ScssService {
           node.selectors = children ? node.selectors :  []
           node.children = children ? [children] :  []
         }
-        return node.selectors.length
+        return node.children.length
       }
       findTargetDomSelector(node ,targetSelector)
       return node

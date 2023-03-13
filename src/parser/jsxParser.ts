@@ -68,25 +68,22 @@ class IterateParentParser extends AbstractParser{
   findVariableDeclarationParent(node:ts.VariableDeclaration|ts.PropertyAssignment ){
     const sourceFile = node.getSourceFile()
     let fileName = sourceFile.fileName
-    // this.languageService. 
     let references = this.tsHelp.getReferences(fileName,node.getStart());
     const { name, initializer } = node
-    if(this.typescript.isBindingPattern(name)){
-      const { elements } = name
-      elements.forEach(ele=>{
-        if(ts.isBindingElement(ele)){
-          const { kind,name,propertyName } = ele
+    // if(this.typescript.isBindingPattern(name)){
+    //   const { elements } = name
+    //   elements.forEach(ele=>{
+    //     if(ts.isBindingElement(ele)){
+    //       const { kind,name,propertyName } = ele
           
-        }
-      })
-    }
+    //     }
+    //   })
+    // }
  
     let parentReferenceNodes: ParentReferenceNode[] = []
     references.forEach((reference=>{
       let node =  this.tsHelp.findNode(sourceFile!,reference.textSpan.start)
       if(node){
-        // let referenceNode = this.findReferencesNodes(node,fileName)
-        // parentReferenceNodes = parentReferenceNodes.concat(referenceNode)
         parentReferenceNodes.push({
           type: 'variableReference',
           tsNode: node,
@@ -94,14 +91,6 @@ class IterateParentParser extends AbstractParser{
       }
     }));
     return parentReferenceNodes
-    // let nodes = this.tsHelp.getReferenceNodes(fileName, node.getStart());
-    // return nodes.map(node=>{
-    //   return {
-    //     type: 'variableReference',
-    //     tsNode: node,
-    //     fileName: fileName
-    //   }
-    // })
   }
   findParentNodes(node, type: ParentReferenceNode['type'] ,options?:{isAllParent?:boolean,topParent?:boolean,iterateLevel?:number}){
     let { isAllParent = false } = options || {}
@@ -161,14 +150,16 @@ class IterateParentParser extends AbstractParser{
     if(this.tsHelp.isCustomJsxElement(definitions)){
       let definitionNode = this.tsHelp.getJsxOpeningElementDefineNode(node);
       // let node = this.tsHelp.getReferenceNodes(fileName,identifier.pos)[0] as  ts.Node
-      let {sassText} = this.tsHelp.getStyledTemplateScss(definitionNode) || {}
-      if(sassText){
-        return [{
-          type: 'styledElement',
-          // sassText: sassText,
-          tsNode: jsxNode,
-          referenceNode: definitionNode
-        }]
+      if(definitionNode){
+        let {sassText} = this.tsHelp.getStyledTemplateScss(definitionNode) || {}
+        if(sassText){
+          return [{
+            type: 'styledElement',
+            // sassText: sassText,
+            tsNode: jsxNode,
+            referenceNode: definitionNode
+          }]
+        }
       }
     }
     return [{type:'node',tsNode: jsxNode}]

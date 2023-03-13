@@ -5,7 +5,6 @@ import * as CssNode from 'vscode-css-languageservice/lib/umd/parser/cssNodes'
 const { NodeType}  = CssNode
 
 
-// CssNode.NodeType
 enum CssSelectorNodeType  {
   ClassSelector,
   SelectorCombinator,

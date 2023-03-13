@@ -4,10 +4,8 @@ import StandardTemplateSourceHelper from 'typescript-template-language-service-d
 import StandardScriptSourceHelper from 'typescript-template-language-service-decorator/lib/standard-script-source-helper'
 import CssSelectorParser from './parser/cssSelectorParser';
 import TsHelp from './service/tsHelp';
-import * as tsSource from 'typescript/built/local/services/sourcemaps'
 
 
-// StandardTemplateSourceHelper
 type LanguageServiceMethodWrapper<K extends keyof ts.LanguageService>
   = (delegate: ts.LanguageService[K], info?: ts.server.PluginCreateInfo) => ts.LanguageService[K];
 
@@ -33,33 +31,27 @@ export default class StyledLanguageServiceProxy {
   intercepts: Partial<{ [name in keyof ts.LanguageService]: LanguageServiceMethodWrapper<any> }> = {}
   info:any
   private getDefinitionAndBoundSpan(fileName: string, position: number): ts.DefinitionInfoAndBoundSpan | undefined {
-
-    
     const tsHelp = new TsHelp(this.typescript, this.languageService);
-
     const cssSelectorParse = new CssSelectorParser(this.typescript, this.languageService, tsHelp);
-    let context = this.helper.getTemplate(fileName,position)
     try{
-      if(!context){
-        let result =  cssSelectorParse.getStyledComponentNode(fileName, position)
-        if(result){
-          return result
-        }
+      let result = cssSelectorParse.getStyledTemplateSelectorByDomSelector(fileName, position)
+      if (result) {
+        return result
       }
-     
     }catch(e:any){
       console.log('error---',e.stack);
     }
-    if(!context){
-      return
-    }
+   
     try{
-      let result = cssSelectorParse.getSelectorCandidateByCssNode(fileName,position);
+      let templateContext = this.helper.getTemplate(fileName,position)
+      if(!templateContext){
+        return
+      }
+      let result = cssSelectorParse.getDomSelectorByStyledTemplateSelector(fileName,position);
       return result
     }catch(e:any){
       console.log('error---',e.stack);
     }
-    // return result
   }
   private tryGetDefinitionAndBoundSpan = (delegate) => {
 
