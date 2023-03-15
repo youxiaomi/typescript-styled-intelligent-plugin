@@ -1,10 +1,6 @@
-// type Ts  = typeof import("typescript")
-// import  from 'typescript/lib/tsserverlibrary'
 import * as ts from 'typescript/lib/tsserverlibrary'
 import TsHelp from '../service/tsHelp'
 import { AbstractParser } from './abstractParser';
-import { StyledComponentNode } from './cssSelectorParser';
-import { findResult, flatten, omitUndefined, unique } from '../utils/utils'
 import logger from '../service/logger';
 
 

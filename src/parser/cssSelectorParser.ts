@@ -7,7 +7,7 @@ import { getScssService, TemplateStringContext } from '../service/cssService'
 import TsHelp from '../service/tsHelp'
 import { findResult, flatten, omitUndefined, unique } from '../utils/utils'
 // import extractCssSelectorWorkWrap, { JsxElementNode,CandidateTextNode, JsxElementSelector } from './extractCssSelector3'
-import extractCssWork from './extractCssSelector'
+import extractSelectorFromJsx from './extractSelectorFromJsx'
 import * as CssNode from 'vscode-css-languageservice/lib/umd/parser/cssNodes'
 import { extractStyleSheetSelectorWorkWrap } from './extractStyleSheet'
 import { createStyleSheetAbstractSyntaxTree, TargetSelector } from '../factory/nodeFactory'
@@ -34,16 +34,13 @@ export default class CssSelectorParser{
   typescript: typeof ts
   languageService: ts.LanguageService
   tsHelp: TsHelp
-  /**
-   * extracting the dom node css selector
-   */
   parseCssSelector = (node: ts.JsxElement | undefined)=>{
     let languageService = this.languageService
     let ts = this.typescript
     if(!node || node.kind != ts.SyntaxKind.JsxElement){
       return []
     }
-    return extractCssWork({
+    return extractSelectorFromJsx({
       node,languageService,tsHelp:this.tsHelp,typescript: this.typescript
     })
   }
@@ -66,7 +63,7 @@ export default class CssSelectorParser{
     if(!styledComponentNode.length){
       return
     }
-    let definitions = this.getSelectors([ts.last(styledComponentNode)], targetSelector);
+    let definitions = this.getSelector(ts.last(styledComponentNode), targetSelector);
     if(!definitions.length){
       return undefined
     }
@@ -79,12 +76,7 @@ export default class CssSelectorParser{
     }
   }
 
-
-  /**
-   * 从js语法中提取styleSheet中css selector
-   * 
-   */
-  getSelectors = (styledComponentNode:ParentReferenceNode[],targetSelector:TargetSelector)=>{
+  getSelector = (styledComponentNode:ParentReferenceNode,targetSelector:TargetSelector)=>{
     let ts = this.typescript
     const getCandidateSelector = (node:ParentReferenceNode)=>{
       let result: ts.DefinitionInfo[] = []
@@ -140,7 +132,8 @@ export default class CssSelectorParser{
       result = result.concat(definitions)
       return result
     }
-    let definitions = flatten(styledComponentNode.reverse().map(getCandidateSelector))
+    let definitions = getCandidateSelector(styledComponentNode)
+    // let definitions = flatten(styledComponentNode.reverse().map(getCandidateSelector))
     return definitions
 
   }

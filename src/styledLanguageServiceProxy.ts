@@ -6,8 +6,7 @@ import CssSelectorParser from './parser/cssSelectorParser';
 import TsHelp from './service/tsHelp';
 
 
-type LanguageServiceMethodWrapper<K extends keyof ts.LanguageService>
-  = (delegate: ts.LanguageService[K], info?: ts.server.PluginCreateInfo) => ts.LanguageService[K];
+type LanguageServiceMethodWrapper<K extends keyof ts.LanguageService>= (delegate: ts.LanguageService[K], info?: ts.server.PluginCreateInfo) => ts.LanguageService[K];
 
 export default class StyledLanguageServiceProxy {
   constructor( typescript: typeof ts, languageService: ts.LanguageService,  project: ts.server.Project,info) {
