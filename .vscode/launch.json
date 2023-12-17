@@ -14,9 +14,9 @@
             "type": "node",
             "name": "debugerTestReact",
             "sourceMaps": true,
-            "runtimeExecutable": "node",
-            "runtimeArgs": ["out/test/react.test.js"],
-            // "runtimeArgs": ["src/test/react.test.ts"],
+            "runtimeExecutable": "ts-node",
+            // "runtimeArgs": ["out/test/react.test.js"],
+            "runtimeArgs": ["src/test/react.test.ts"],
             "outFiles": [
                 "${workspaceFolder}/**/*.js",
                 "/Users/squid/study/TypeScript/built/local/**/*.js",
@@ -48,6 +48,8 @@
             "sourceMaps": true,
             // "port": 9559,
             "port": 9228,
+            "restart": true,
+            //  "preLaunchTask": "npm: watch",
             "outFiles": [
                 "${workspaceFolder}/**/*.js",
                 // "!**/node_modules/**",

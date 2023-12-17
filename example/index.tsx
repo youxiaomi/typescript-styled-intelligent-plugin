@@ -137,6 +137,7 @@ export var User = styled(User2)`
 `
 var User5 = ()=>{
   return <User>
+    <div className='user'></div>
     {/* <User3>
       <div className='user3-inner'></div>
     </User3> */}
@@ -261,4 +262,58 @@ const AA = () => {
       <div className='age'>age</div>
     </User> */}
   </div>
+}
+
+var TestView = styled.div`
+  /* .a.d .b{
+    color: red;
+  }
+  .a>.b{
+    color: yellow;
+  }
+  .a+.b{
+    
+  }
+  .a .b .c {}
+
+  .a .a {}
+  .b .c{
+    color: red;
+  }
+  .d{
+    .c1{
+
+    }
+  } */
+  /* .a1>.c1{
+    .b{}
+  } */
+  .a1 .b{
+    &>.c1,.d{
+
+    }
+  }
+`
+const Test22 = () => {
+
+  return <TestView>
+    {/* <div className="a d">
+      <div className="b c1">
+        <div className="a"></div>
+        <div className="b">
+          <div className="c"></div>
+        </div>
+      </div>
+      <div className="a"></div>
+    </div>  */}
+    <div className='a1  c1 c2'>
+      <div className='b c'></div>
+    </div>
+    <div className='c1'>
+      <div className='b '></div>
+    </div>
+    <div className='a1  c1'>
+      <div className='b c1'></div>
+    </div>
+  </TestView>
 }

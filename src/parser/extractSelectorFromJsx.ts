@@ -45,7 +45,14 @@ class ExtractCssSelectorWorkScopeValues {
 }
 
 
-
+/**
+ * 两种情况  1  点击  2 智能提示
+ * 点击css选择器展示符合css子级的，所有dom节点，递归五级子级
+ * 点击dom节点，向上找5级，向上找的链路记下来。找到的所有styled组件，在根据记下来的链路解析为一条dom树，再匹配
+ * 
+ * 
+ * 
+ */
 
 class ExtractCssSelectorWorkScope extends ExtractCssSelectorWorkScopeValues{
   scope?: ExtractCssSelectorWorkScope

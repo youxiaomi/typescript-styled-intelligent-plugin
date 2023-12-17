@@ -51,7 +51,7 @@ export default class StyledLanguageServiceProxy {
     }catch(e:any){
       console.log('error---',e.stack);
     }
-  }
+  }className
   private tryGetDefinitionAndBoundSpan = (delegate) => {
 
     return (fileName: string, position: number, ...rest: any[]) => {

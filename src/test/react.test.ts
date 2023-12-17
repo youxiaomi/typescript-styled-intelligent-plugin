@@ -75,7 +75,7 @@ const test = () => {
   // console.log(res);
   console.log('123')
 
-  cssSelectorParser.getStyledComponentNode(testFiles.fileName, testFiles?.getFullText().indexOf('user1'))
+  cssSelectorParser.getStyledTemplateSelectorByDomSelector(testFiles.fileName, testFiles?.getFullText().indexOf('user1'))
 }
 // test()
 
@@ -83,7 +83,7 @@ const test = () => {
 const getSelectorDom = ()=>{
 
   // extractStyleSheetSelectorWorkWrap()
-  cssSelectorParser.getSelectorCandidateByCssNode(testFiles.fileName,testFiles?.getFullText().indexOf('user1') )
+  // cssSelectorParser.getSelectorCandidateByCssNode(testFiles.fileName,testFiles?.getFullText().indexOf('user1') )
 
 
 }

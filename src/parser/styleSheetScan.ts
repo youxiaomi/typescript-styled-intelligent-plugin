@@ -11,6 +11,7 @@ export default class StyleSheetScan{
    */
   text = ''
   private nodes:{offset:number,node: Node,text:string}[] = [] 
+  targetNode?:{offset:number,node: Node,text:string}
   getText(){
     return this.text
   }
@@ -26,7 +27,8 @@ export default class StyleSheetScan{
       node,
       offset,
     }
-    this.nodes.push(textNode)
+    this.nodes.push(textNode);
+    return textNode
   }
   // getOffset(){
   //   return this.text.length

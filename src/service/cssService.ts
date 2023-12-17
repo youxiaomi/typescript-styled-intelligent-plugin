@@ -94,7 +94,8 @@ const amendStyleSheet = (text,tagName?:string)=>{
 }
 
 export type CssTextDocument =  TextDocument & {
-  getOffsetInFile:(offset:number)=>number
+  getOffsetInFile:(offset:number)=>number,
+  getOffset:(offset:number)=>number,
 }
 
 class ScssService {
@@ -121,6 +122,9 @@ class ScssService {
       lineCount: text.split(/\n/g).length + 1,
       getOffsetInFile:(offset:number)=> {
         return offset - startOffset
+      },
+      getOffset:(offset:number)=> {
+        return offset 
       },
     }
 
@@ -163,6 +167,9 @@ class ScssService {
       getOffsetInFile:(offset:number)=> {
         return templateStringContext.node.getStart() + offset - startOffset
       },
+      getOffset(offset:number){
+        return offset - templateStringContext.node.getStart() + startOffset
+      }
     }
 
     return doc
@@ -187,6 +194,33 @@ class ScssService {
     let declarations = NodeDeclarations.getChildren()
     return declarations.filter(declartion => declartion.type == NodeType.Ruleset) as RuleSet[]
   }
+  extractStyleNode = (node:Nodes.Stylesheet, targetSelector:TargetSelector)=>{
+
+  }
+  extractDomNode = (node: JsxElementNode, targetSelector:TargetSelector)=>{
+    function findTargetDomSelector(node: JsxElementNode,targetSelector:TargetSelector){
+      logger.info(node.tsNode.getText())
+      let selector = node.selectors.find(selector=>{
+        if(selector.type == "classNameSelector" || selector.type == "idSelector"){
+          return selector.offset <= targetSelector.selectorStart && selector.offset + selector.text.length >= targetSelector.selectorStart
+        }
+      })
+      if(selector){
+        node.children = []
+        return true
+      }else{
+        let children =  node.children?.find(child=>{
+          return  findTargetDomSelector(child as JsxElementNode,targetSelector)
+        })
+        node.selectors = children ? node.selectors :  []
+        node.children = children ? [children] :  []
+      }
+      return node.children.length
+    }
+    findTargetDomSelector(node ,targetSelector)
+    return node
+  }
+
   /**
    *  把dom节点选中的selector 转换为styleSheet，没有selector就转换所有子节点
    */
@@ -206,18 +240,18 @@ class ScssService {
       let tsNode = selector.tsNode as ts.StringLiteral
 
       let text = `.${selector.text || tsNode.text.trim()}`
-      styleSheetNodeScan.setText(text,selector)
+      return styleSheetNodeScan.setText(text,selector)
     }
     const generateId = (selector:JsxElementSelector)=>{
       let tsNode = selector.tsNode as ts.StringLiteral
       let text = `#${tsNode.text.trim()}`
-      styleSheetNodeScan.setText(text,selector)
+      return styleSheetNodeScan.setText(text,selector)
     }
     const generateElement = (selector:JsxElementSelector)=>{
       let tsNode = selector.tsNode as ts.Identifier
 
       let text =  `${tsNode.text.trim()}`
-      styleSheetNodeScan.setText(text,selector)
+      return styleSheetNodeScan.setText(text,selector)
     }
     const generateSelectorText = (selector:JsxElementSelector)=>{
           
@@ -228,84 +262,46 @@ class ScssService {
         return generateId(selector)
       }
       if(selector.type == "elementSelector"){
-        generateElement(selector)
+        return generateElement(selector)
       }
-      return []
+      return 
     }
-    function extractTargetSelectorStylesheet(node: JsxElementNode, targetSelector:TargetSelector){
-      function findTargetDomSelector(node: JsxElementNode,targetSelector:TargetSelector){
-        logger.info(node.tsNode.getText())
-        let selector = node.selectors.find(selector=>{
-          if(selector.type == "classNameSelector" || selector.type == "idSelector"){
-            return selector.offset <= targetSelector.selectorStart && selector.offset + selector.text.length >= targetSelector.selectorStart
-          }
-        })
-        if(selector){
-          node.children = []
-          return true
-        }else{
-          let children =  node.children?.find(child=>{
-            return  findTargetDomSelector(child as JsxElementNode,targetSelector)
-          })
-          node.selectors = children ? node.selectors :  []
-          node.children = children ? [children] :  []
-        }
-        return node.children.length
-      }
-      findTargetDomSelector(node ,targetSelector)
-      return node
-    }
+    
 
 
-    if(targetSelector){
-      node = extractTargetSelectorStylesheet(node as JsxElementNode,targetSelector)
-    }
+    // if(targetSelector){
+    //   node = extractTargetSelectorStylesheet(node as JsxElementNode,targetSelector)
+    // }
     const generateSelectorNode = (node:JsxElementNode,targetSelector?: TargetSelector) =>{
       if(node.type == 'styledElement' || node.type == 'intrinsicElement'){
         const { type ,children = []}  = node
         let selectors = node.selectors
-        // if(targetSelector){
-        //   let _selectorsResult = node.selectors.map(selector=>{
-        //     // console.log(selector.tsNode.getFullText());
-            
-        //     if(selector.selectorType == 'className' || selector.selectorType == 'id'){
-        //       let child = (selector.children || []).find(item => {
-        //         return item.offset <= targetSelector.selectorStart && item.offset + item.text.length >= targetSelector.selectorStart
-        //         // return item.tsNode == sourceSelectorNode
-        //       });
-        //       let _selector = {...selector}
-        //       if(child){
-        //         _selector.children = [child]
-        //         return _selector
-        //       }
-        //     }
-        //     // if(selector.tsNode == sourceSelectorNode){ //element selector
-        //     //   return selector
-        //     // }
-        //   })
-        //   let _selectors = omitUndefined(_selectorsResult)
-        //   if(_selectors.length){
-        //     _selectors.forEach((selector)=>{
-        //       let text = generateSelectorText(selector);
-        //       styleSheetNodeScan.setText('{',{type:'braceOpen'})
-        //       styleSheetNodeScan.setText('}',{type:"braceClose"})
-        //     })
-        //     return true
-        //   }
-        // }
         // 多class可以并集，生成  .user.age
-
-        selectors.map(generateSelectorText)
+        let hasTargetselector = node.selectors.find(selector=>{
+          if(selector.type == "classNameSelector" || selector.type == "idSelector"){
+            return targetSelector && selector.offset <= targetSelector.selectorStart && selector.offset + selector.text.length >= targetSelector.selectorStart
+          }
+        })
+        if(hasTargetselector){
+          let targetScanNode = generateSelectorText(hasTargetselector)
+          if(targetScanNode){
+            styleSheetNodeScan.targetNode = targetScanNode
+          }
+        }else{
+          selectors.map((selector)=>{
+            return generateSelectorText(selector)
+          })
+        }
         if(selectors.length){
           styleSheetNodeScan.setText('{',{type:'braceOpen'})
         }
-        // let selectorStrings = flatten(selectorResults).join(',')
-        let isExist = false
-        for(let node of children){
-          generateSelectorNode(node,targetSelector)
-          // if(targetSelector && isExist){
-          //   break
-          // }
+        if(!hasTargetselector){
+          for(let node of children){
+            generateSelectorNode(node,targetSelector)
+            // if(targetSelector && isExist){
+            //   break
+            // }
+          }
         }
         // let childrenSelectors = childrenSelectorResults.join(``)
         if(selectors.length){
@@ -318,6 +314,173 @@ class ScssService {
     generateSelectorNode(node,targetSelector)
     return styleSheetNodeScan
     // return generateSelectorNode(node,sourceSelectorNode)
+  }
+  findCssSelctorNode(cssSelectNode:CssSelectorNode,offset:number){
+
+   function findCssSelectNode(cssSelectNode:CssSelectorNode){
+    let node = cssSelectNode.node
+    if(node.offset < offset && offset < node.end){
+      if(node.type == Nodes.NodeType.ClassSelector || node.type == Nodes.NodeType.IdentifierSelector || node.type == NodeType.ElementNameSelector){
+        return cssSelectNode
+      }else{
+        return Array.from(cssSelectNode.children).find(child=>{
+          return findCssSelectNode(child)
+        })
+      }
+    }
+   }
+   return findCssSelectNode(cssSelectNode)
+  }
+  matchCssSelectorNode3(domNode:JsxElementNode,cssNode:CssSelectorNode){
+    const cssMatchNodes =  new Map<number,Set<JsxElementSelector>>();
+    const domMatchNodes = new Map<number,Set<CssSelectorNode>>()
+
+    function matchDomNode(domNode:JsxElementNode,cssSelectNode:CssSelectorNode){
+      let cssSelectText  = cssSelectNode.nodeText
+      let domSelectors = domNode.selectors
+      domNode.selectors.forEach((domSelector) => {
+        let text = domSelector.fullText
+        if (cssSelectText == text) {
+          // .a.b selector
+          if(cssSelectNode.siblings.size){
+            let notFoundSibling =Array.from( cssSelectNode.siblings).find(sibling=>{
+              return !domSelectors.find(domSelector=>{
+                return domSelector.fullText == sibling.nodeText
+              })
+            })
+            if(notFoundSibling){
+              return
+            }
+          }
+          // .a+.b 
+          if(cssSelectNode.combinatorSibling){
+            // let domNodeParent = domNode.parent
+            // let prevNodeHasSelector = domNodeParent?.selectors.find(selectolr => selectolr.fullText ==cssNode.combinatorSiblingNode?.nodeText )
+            // if(!prevNodeHasSelector){
+            //   return
+            // }
+          }
+          if(cssSelectNode.combinatorParent){
+
+          }
+          let currentStyleMatchNode = cssMatchNodes.get(cssSelectNode.node.offset) || new Set()
+          currentStyleMatchNode.add(domSelector)
+          cssMatchNodes.set(cssSelectNode.node.offset, currentStyleMatchNode)
+
+          let currentDomMatchNode = domMatchNodes.get(domSelector.offset) || new Set()
+          currentDomMatchNode.add(cssSelectNode)
+          domMatchNodes.set(domSelector.offset, currentDomMatchNode)
+          
+        }
+      })
+      domNode.children.forEach((domNodeChild)=>{
+        matchDomNode( domNodeChild,cssSelectNode)
+      })
+    }
+
+    function matchCssNode(domNodes:JsxElementNode[],cssSelectNodes:CssSelectorNode[]){
+      cssSelectNodes.forEach(cssSelectNode=>{
+        let cssSelectText  = cssSelectNode.nodeText
+        if(cssSelectText == ':root'){
+          matchCssNode(domNodes,Array.from(cssNode.children))
+          return
+        }
+        domNodes.forEach(domNode=>{
+          matchDomNode(domNode,cssSelectNode)
+          let cssSelectNodeChildren = cssSelectNode.children
+          let domSelectorNodes = cssMatchNodes.get(cssSelectNode.node.offset) || new Set();
+          domSelectorNodes.forEach(domSelector=>{
+            matchCssNode(domSelector.parent.children,Array.from(cssSelectNodeChildren))
+          })
+        })
+      })
+    }
+    matchCssNode([domNode],[cssNode])
+    return {
+      cssMatchNodes,
+      domMatchNodes,
+    }
+  }
+
+  matchCssSelectorNodes2(domTree: CssSelectorNode,styleTree: CssSelectorNode){
+    console.log(123123)
+    let domNode = domTree
+    let styleNode = styleTree
+    const styleMatchNodes =  new Map<number,Set<CssSelectorNode>>([
+      [styleTree.c_id, new Set([domNode])]
+    ]);
+    const domMatchNodes = new Map<number,Set<CssSelectorNode>>(
+      [
+        [domNode.c_id, new Set([styleTree])]
+      ]
+    )
+    // matchNode(domNode,styleTree)
+
+    function matchNode (domNode,styleNode){
+
+      if(isSame(domNode,styleNode)){
+        let currentStyleMatchNode = styleMatchNodes.get(styleNode.c_id) || new Set()
+        currentStyleMatchNode.add(domNode)
+        styleMatchNodes.set(styleNode.c_id, currentStyleMatchNode)
+        let currentDomMatchNode = domMatchNodes.get(domNode.c_id)|| new Set()
+        currentDomMatchNode.add(styleNode)
+        domMatchNodes.set(styleNode.c_id, currentDomMatchNode)
+      }
+      let children = domNode.children;
+      children.forEach(domNode=>{
+        matchNode(domNode,styleNode)
+      })
+    }
+    let currentStyleNode = styleNode
+    // while()
+
+    let domNodes = styleMatchNodes.get(styleNode.c_id)  || new Set();
+    let styleNodes = domMatchNodes.get(domNode.c_id) || new Set();
+    matchStyleChildNode(domNodes,styleNodes)
+
+    function matchStyleChildNode(domNodes, styleNodes) {
+      // let domNodes = styleMatchNodes.get(styleNode.c_id)  || new Set();
+      // let styleNodes = domMatchNodes.get(domNode.c_id) || new Set();
+      styleNodes.forEach((styleNode) => {
+        domNodes?.forEach((domNode) => {
+          matchNode(domNode, styleNode);
+          let styleChildren = styleNode.children
+          let domNodes = styleMatchNodes.get(styleNode.c_id) || new Set();
+          domNodes.forEach(domNode => {
+            matchStyleChildNode(domNode.children, styleChildren)
+          })
+        })
+
+      })
+
+    }
+
+
+    function isSame(domNode:CssSelectorNode,styleNode:CssSelectorNode){
+      let sourceCssNode = domNode.node
+      let targetCssNode = styleNode.node
+      let isSame = targetCssNode.type == sourceCssNode.type && domNode.nodeText == styleNode.nodeText
+
+
+      let styleSiblings = Array.from(styleNode.parent?.children || []);
+      if (isSame && styleNode.siblings.size) {
+        let domSiblings = Array.from(domNode.siblings)
+        for (let sibling of styleSiblings) {
+          let notFound = !domSiblings.find(domSibling => domSibling.nodeText == sibling.nodeText)
+          if (notFound) {
+            isSame = false
+            break
+          }
+        }
+      }
+      return isSame
+    }
+
+    return {
+      styleMatchNodes,
+      domMatchNodes
+    }
+
   }
   matchCssSelectorNodes(targeTree: CssSelectorNode,sourceTree: CssSelectorNode,isMatchTarge = false){
     let matchSourceNodes: Set<CssSelectorNode> = new Set()

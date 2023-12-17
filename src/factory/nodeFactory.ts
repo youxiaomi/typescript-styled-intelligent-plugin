@@ -17,13 +17,14 @@ enum CssSelectorNodeType  {
   // SelectorCombinator,
 
 }
-
+let c_id = 1
 
 export class CssSelectorNode{
   type: CssSelectorNodeType
   parent: CssSelectorNode | undefined
   node:CssNode.Node
-  //exist "+"  symbol
+  combinatorSiblingNode?: CssSelectorNode
+  //exist "+"  symbol  @deprecated
   combinatorSibling: boolean = false
   //exist ">"  symbol
   combinatorParent: boolean = false
@@ -31,6 +32,7 @@ export class CssSelectorNode{
   //同级存在的选择器。多个selector共同决定 .user.boy
   private _siblings: Set<CssSelectorNode> = new Set()
   private _matchNodes: Set<CssSelectorNode> = new Set()
+  c_id = ++c_id
   constructor(type:CssSelectorNodeType,node){
     this.type = type
     this.node = node
@@ -93,7 +95,7 @@ export class CssSelectorNode{
 
 
 
-export function createStyleSheetAbstractSyntaxTree(cssNode: CssNode.Node){
+export function createStyleSheetAbstractSyntaxTree(cssNode: CssNode.Node):CssSelectorNode{
   let typeMap = {
     [CssNode.NodeType.ClassSelector]: CssSelectorNodeType.ClassSelector,
     [CssNode.NodeType.Identifier]: CssSelectorNodeType.Identifier,
@@ -120,7 +122,8 @@ export function createStyleSheetAbstractSyntaxTree(cssNode: CssNode.Node){
   if(nodeHandlers[cssNode.type]){
     return nodeHandlers[cssNode.type](cssNode)
   }
-  return undefined
+  return nodeHandlers[cssNode.type](cssNode)
+  // return undefined
 
   type DefaultSelectorOptions = {
     declarations:CssNode.Node[],
@@ -139,6 +142,7 @@ export function createStyleSheetAbstractSyntaxTree(cssNode: CssNode.Node){
     let node = new CssSelectorNode(typeMap[cssNode.type], cssNode)
     if(hasSelectorCombinatorSibling){
       node.combinatorSibling = true
+      // node.combinatorSiblingNode = parents[0]
     }
     if(hasSelectorCombinatorParent){
       node.combinatorParent = true
@@ -174,7 +178,7 @@ export function createStyleSheetAbstractSyntaxTree(cssNode: CssNode.Node){
     return   firstChild.type == CssNode.NodeType.SelectorCombinator
   }
   function hasSelectorCombinatorSiblingFromNode(node: CssNode.Node | undefined){
-    return node && node.type == CssNode.NodeType.SelectorCombinatorSibling
+    return node && node.type == CssNode.NodeType.SelectorCombinatorSibling // + 
   }
   function hasSelectorCombinatorParentFromNode(node: CssNode.Node | undefined){
     return node && node.type == CssNode.NodeType.SelectorCombinatorParent
@@ -222,7 +226,7 @@ export function createStyleSheetAbstractSyntaxTree(cssNode: CssNode.Node){
   }
   function SelectorCombinator(selecotorCombinator: CssNode.Node){
     return selecotorCombinator
-  }
+  }// .a .d,.b 逗号分割两个selector   
   function Selector(selector: CssNode.Selector,parents:CssSelectorNode[],prevNode: CssSelectorNode|undefined, declarations:CssNode.Node[]){
     let children = selector.getChildren();
     let nextChildParents: CssSelectorNode[]  = parents
@@ -429,28 +433,47 @@ export class TargetSelector{
   }
 }
 
-
+const selectors = {
+  'id': 'idSelector',
+  "className": 'classNameSelector'
+}
 export class JsxElementSelector{
   type:'idSelector'|'classNameSelector'|'elementSelector'
-  text = ''
+  _text = ''
   offset = 0
+  fullText = ''
   constructor(readonly tsNode:ts.Node,readonly parent: JsxElementNode,selectorName:string){
-    const selectors = {
-      'id': 'idSelector',
-      "className": 'classNameSelector'
-    }
+   
     this.type = selectors[selectorName] || 'elementSelector'
+  }
+  set text (val){
+    this._text = val
+    this.fullText = val
+    if(this.type == selectors.id){
+      this.fullText = `#${val}`
+    }
+    if(this.type == selectors.className){
+      this.fullText = `.${val}`
+    }
+  }
+  get text (){
+    return this._text
+  }
+  addFullText  = ()=>{
+
+
   }
 }
 
 
 type JsxElementNodeType = "styledElement" | 'intrinsicElement'
-
+let d_id = 1
 export class JsxElementNode  {
   selectors: JsxElementSelector[] = []
   children: JsxElementNode[] = []
   attributes:  {[attrName:string]:JsxElementNode[]} = {}
   parent?: JsxElementNode
+  d_id = ++d_id
   constructor(readonly tsNode:ts.Node,readonly type:JsxElementNodeType, parent?:JsxElementNode){
 
   }

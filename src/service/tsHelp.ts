@@ -363,12 +363,12 @@ export default class TsHelp {
     }
     return getTemplateNode(node!)
   }
-  getJsxElementOfIdentifer(node: ts.Node){
-    if(ts.isIdentifier(node)){
-      if(ts.isJsxOpeningElement(node.parent)){
+  getJsxElementOfIdentifer = (node: ts.Node)=>{
+    if(this.typescript.isIdentifier(node)){
+      if(this.typescript.isJsxOpeningElement(node.parent)){
         return node.parent.parent
       }
-      if(ts.isPropertyAccessExpression(node.parent) && ts.isJsxOpeningElement(node.parent.parent)){
+      if(this.typescript.isPropertyAccessExpression(node.parent) && this.typescript.isJsxOpeningElement(node.parent.parent)){
         return node.parent.parent.parent
       }
     }
