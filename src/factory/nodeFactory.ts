@@ -1,7 +1,8 @@
 
 
-import ts from 'typescript/lib/tsserverlibrary'
+import typescript from 'typescript/lib/tsserverlibrary'
 import * as CssNode from 'vscode-css-languageservice/lib/umd/parser/cssNodes'
+import { omitUndefined } from '../utils/utils'
 const { NodeType}  = CssNode
 
 
@@ -21,13 +22,15 @@ let c_id = 1
 
 export class CssSelectorNode{
   type: CssSelectorNodeType
+  // @de
   parent: CssSelectorNode | undefined
+  parents: Set<CssSelectorNode> = new Set()
   node:CssNode.Node
-  combinatorSiblingNode?: CssSelectorNode
-  //exist "+"  symbol  @deprecated
-  combinatorSibling: boolean = false
+  //exist "+"  symbol 
+  combinatorSiblingNodes: Set<CssSelectorNode> = new Set()
+  // combinatorSibling: boolean = false
   //exist ">"  symbol
-  combinatorParent: boolean = false
+  combinatorParents: Set<CssSelectorNode> = new Set()
   private _children:Set<CssSelectorNode> = new Set()
   //同级存在的选择器。多个selector共同决定 .user.boy
   private _siblings: Set<CssSelectorNode> = new Set()
@@ -36,6 +39,12 @@ export class CssSelectorNode{
   constructor(type:CssSelectorNodeType,node){
     this.type = type
     this.node = node
+  }
+  addCombinatorParentNode(node:CssSelectorNode){
+    this.combinatorParents.add(node)
+  }
+  addCombinatorSiblingNode(node:CssSelectorNode){
+    this.combinatorSiblingNodes.add(node)
   }
   addSibling(node:CssSelectorNode){
     if(this.parent){
@@ -88,6 +97,7 @@ export class CssSelectorNode{
   }
   addChild(node:CssSelectorNode){
     node.parent = this
+    node.parents.add(this)
     this._children.add(node)
   }
   addSelector(node:CssSelectorNode){}
@@ -141,11 +151,11 @@ export function createStyleSheetAbstractSyntaxTree(cssNode: CssNode.Node):CssSel
     const { declarations, hasSelectorCombinator, hasSelectorCombinatorSibling ,hasSelectorCombinatorParent}  = options
     let node = new CssSelectorNode(typeMap[cssNode.type], cssNode)
     if(hasSelectorCombinatorSibling){
-      node.combinatorSibling = true
+      // node.combinatorSibling = true
       // node.combinatorSiblingNode = parents[0]
     }
     if(hasSelectorCombinatorParent){
-      node.combinatorParent = true
+      // node.combinatorParent = true
     }
     if(prevNode instanceof CssSelectorNode){
       let prevNodeSiblings = prevNode.siblings
@@ -224,6 +234,123 @@ export function createStyleSheetAbstractSyntaxTree(cssNode: CssNode.Node):CssSel
     }
     return nodes
   }
+  function SelectorV2(selector:CssNode.Selector,parents:CssSelectorNode[],declarations:CssNode.Node[]){
+    let children = selector.getChildren();
+    let childrenEntries = new Set(children).values()
+    let childNext  = childrenEntries.next()
+    let _nodes:CssSelectorNode[] = parents
+    console.log(selector.getText())
+
+    while(!childNext.done){
+      let child = childNext.value
+      if(child.type == NodeType.SimpleSelector){
+        let {isSelectorCombinator, nodes} = SimpleSelectorv2(child as CssNode.SimpleSelector, parents)
+        if(isSelectorCombinator){
+          _nodes.forEach(node=>{
+            nodes.forEach(spNode=>{
+              // node.addSibling(spNode)
+              spNode.addSibling(node)
+            })
+          })
+          _nodes = _nodes.concat(nodes)
+        }else{
+          _nodes.forEach(node=>{
+            nodes.forEach(spNode=>{
+              node.addChild(spNode)
+            })
+          })
+          _nodes = nodes
+        }
+        // SelectorCombinatorParent = false
+        // SelectorCombinatorSibling = false
+      }
+      //>
+      if(child.type == NodeType.SelectorCombinatorParent){
+        childNext  = childrenEntries.next()
+        let {isSelectorCombinator, nodes} = SimpleSelectorv2(childNext.value as CssNode.SimpleSelector, parents)
+        _nodes.forEach(node=>{
+          nodes.forEach(spNode=>{
+            node.addChild(spNode)
+            spNode.addCombinatorParentNode(node)
+          })
+        })
+        _nodes = nodes
+        // SelectorCombinatorParent = true  
+      }
+      //+
+      if(child.type == NodeType.SelectorCombinatorSibling){
+        childNext  = childrenEntries.next()
+        let {isSelectorCombinator, nodes} = SimpleSelectorv2(childNext.value as CssNode.SimpleSelector, parents)
+        _nodes.forEach(node=>{
+          node.parents.forEach((parent)=>{
+            nodes.forEach(spNode=>{
+              parent.addChild(spNode);
+            })
+          })
+          nodes.forEach(spNode=>{
+            spNode.addCombinatorSiblingNode(node);
+          })
+        })
+        _nodes = nodes
+        // SelectorCombinatorSibling = true
+      }
+      childNext  = childrenEntries.next()
+    }
+    declarations.forEach(declaration=>{
+      if(declaration.type == CssNode.NodeType.Ruleset){
+        Ruleset(declaration as CssNode.RuleSet,_nodes)
+      }
+    })
+
+    // children.forEach((child,index)=>{
+    //   if(child.type == NodeType.SimpleSelector){
+    //     SimpleSelector(child as CssNode.SimpleSelector, parents,{SelectorCombinatorParent,SelectorCombinatorSibling})
+    //     SelectorCombinatorParent = false
+    //     SelectorCombinatorSibling = false
+    //   }
+    //   //>
+    //   if(child.type == NodeType.SelectorCombinatorParent){
+    //     SelectorCombinatorParent = true
+    //   }
+    //   //+
+    //   if(child.type == NodeType.SelectorCombinatorSibling){
+    //     SelectorCombinatorSibling = true
+    //   }
+    // })
+
+  }
+  function SimpleSelectorv2(
+    simpleSelector:CssNode.SimpleSelector,
+    parents:CssSelectorNode[],
+    ){
+    let children = simpleSelector.getChildren()
+    let isSelectorCombinator = false
+    let nodes:CssSelectorNode[] = []
+    children.forEach((child,index)=>{
+      //&
+      if(child.type == NodeType.SelectorCombinator){
+        isSelectorCombinator  = true
+        // prevNodeSiblings = parents
+        // parents = omitUndefined(parents.map(node=>node.parent))
+      }
+      if(child.type == NodeType.ClassSelector || child.type == NodeType.IdentifierSelector || child.type == NodeType.ElementNameSelector){
+        let nodeType: CssSelectorNodeType = child.type == NodeType.ClassSelector ? CssSelectorNodeType.ClassSelector : CssSelectorNodeType.IdentifierSelector
+        if(child.type == NodeType.ElementNameSelector){
+          nodeType = CssSelectorNodeType.ElementNameSelector
+        }
+        let node = new CssSelectorNode(nodeType,child)
+        nodes.forEach(_node=>{
+          node.addSibling(_node)
+          _node.addSibling(node)
+        })
+        nodes.push(node)
+      }
+    })
+    return {
+      nodes,
+      isSelectorCombinator
+    }
+  }
   function SelectorCombinator(selecotorCombinator: CssNode.Node){
     return selecotorCombinator
   }// .a .d,.b 逗号分割两个selector   
@@ -240,11 +367,12 @@ export function createStyleSheetAbstractSyntaxTree(cssNode: CssNode.Node):CssSel
       }
       preNode = child
       if(!Array.isArray(nextChildParents)){
-        debugger
+        // debugger
       }
     })
     
-
+   
+   
   }
   function StylesheetHandler(node: CssNode.Stylesheet){
     let ruleSet = node.getChild(0) as CssNode.RuleSet
@@ -275,26 +403,17 @@ export function createStyleSheetAbstractSyntaxTree(cssNode: CssNode.Node):CssSel
   function Ruleset(ruleSet: CssNode.RuleSet,parents:CssSelectorNode[]){
     let children = ruleSet.getSelectors().getChildren()
     let declarations = ruleSet.getDeclarations()?.getChildren() || [];
-
-    // if(!parent && children.length != 1 && children[0].getChildren().length != 1){
-    //   throw new Error(`current styleSheet not only one parent node`)
-    // }
-    // if(!parent){
-      
-    //   // let currentType =typeMap[children[0].getChildren()[0].getChildren()[0].type]
-    //   // if(!currentType){
-    //   //   throw new Error(`css node type ${children[0].type} not found`)
-    //   // }
-    //   // parent = new CssSelectorNode(currentType, children[0].getChildren()[0].getChildren()[0])
-    //   // declarations.forEach(declaration=>{
-    //   //   DeclarationHandler(declaration,parent)
-    //   // })
-    //   // return parent
-    // }else{
-     
-    // }
+    children.forEach(child=>{
+      if( child.type == CssNode.NodeType.Selector){
+        SelectorV2(child as CssNode.Selector,parents,declarations)
+      }
+    })
+    return
+    //TODO 
     let prevChildNode: CssSelectorNode | undefined
     children.forEach(child=>{
+      Selector
+
       let currentHandler = getCurrentHandler(child);
       prevChildNode = currentHandler(child,parents,prevChildNode,declarations)
     })

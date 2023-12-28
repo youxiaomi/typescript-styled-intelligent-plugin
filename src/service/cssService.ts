@@ -353,16 +353,16 @@ class ScssService {
             }
           }
           // .a+.b 
-          if(cssSelectNode.combinatorSibling){
-            // let domNodeParent = domNode.parent
-            // let prevNodeHasSelector = domNodeParent?.selectors.find(selectolr => selectolr.fullText ==cssNode.combinatorSiblingNode?.nodeText )
-            // if(!prevNodeHasSelector){
-            //   return
-            // }
-          }
-          if(cssSelectNode.combinatorParent){
+          // if(cssSelectNode.combinatorSibling){
+          //   // let domNodeParent = domNode.parent
+          //   // let prevNodeHasSelector = domNodeParent?.selectors.find(selectolr => selectolr.fullText ==cssNode.combinatorSiblingNode?.nodeText )
+          //   // if(!prevNodeHasSelector){
+          //   //   return
+          //   // }
+          // }
+          // if(cssSelectNode.combinatorParent){
 
-          }
+          // }
           let currentStyleMatchNode = cssMatchNodes.get(cssSelectNode.node.offset) || new Set()
           currentStyleMatchNode.add(domSelector)
           cssMatchNodes.set(cssSelectNode.node.offset, currentStyleMatchNode)
@@ -495,10 +495,10 @@ class ScssService {
 
       let isSame = isSameNode(targetNode, sourceNode)
       if (isSame) {
-        let isCombinator = sourceNode.combinatorSibling || sourceNode.combinatorParent || targetNode.combinatorParent || targetNode.combinatorSibling
-        if (isCombinator && targetNode.parent && sourceNode.parent) {
-          isSame = isSameNode(targetNode.parent, sourceNode.parent)
-        }
+        // let isCombinator = sourceNode.combinatorSibling || sourceNode.combinatorParent || targetNode.combinatorParent || targetNode.combinatorSibling
+        // if (isCombinator && targetNode.parent && sourceNode.parent) {
+        //   isSame = isSameNode(targetNode.parent, sourceNode.parent)
+        // }
       }
       let targetChildren = targetNode.children
       let sourceChildren = sourceNode.children
