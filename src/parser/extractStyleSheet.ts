@@ -34,7 +34,15 @@ export function extractStyleSheetSelectorWorkWrap(styleSheet:Nodes.Stylesheet,po
     let currentNodeOffset = cssDoc.getOffsetInFile(node.offset)
    
     if(currentNodeOffset <= position && position <= (currentNodeOffset + node.length)){
-      targetNode = node
+      let children = node.getChildren()
+      children.find(node=>{
+        let currentNodeOffset = cssDoc.getOffsetInFile(node.offset)
+        if(currentNodeOffset <= position && position <= (currentNodeOffset + node.length)){
+          targetNode = node
+          return node
+        }
+      })
+      // targetNode = node
       return node
     }
     

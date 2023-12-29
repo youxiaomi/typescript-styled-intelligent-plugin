@@ -265,71 +265,22 @@ const AA = () => {
 }
 
 var TestView = styled.div`
-  /* .a.d .b{
-    color: red;
-  }
-  .a>.b{
-    color: yellow;
-  }
-  .a+.b{
-    
-  }
-  .a .b .c {}
-
-  .a .a {}
-  .b .c{
-    color: red;
-  }
-  .d{
-    .c1{
-
-    }
-  } */
-  /* .a1>.c1{
-    .b{}
-  } */
-  .a1 .b,.d1>.c3.c4{
-    /* &>.c1.d4 .c3,.d{
-
-    }
-    div,div.a1{
-
-    }
-    &+.c2 {
-
-    } */
-    /* &.c3.d4 .d22,&.c4{
-
-      
-    }
-    &.d5 .d22{
-
-    } */
-    .d1+.d2.d3 .d5{
+  
+  .a1,.c222{
+    &+.c1{
 
     }
   }
 `
-const Test22 = () => {
-
+const Test22 = (props:any) => {
+  let aa = props ? 'a1' : 'c222'
+  let bb = ()=>{
+    return 'c222'
+  }
   return <TestView>
-    {/* <div className="a d">
-      <div className="b c1">
-        <div className="a"></div>
-        <div className="b">
-          <div className="c"></div>
-        </div>
-      </div>
-      <div className="a"></div>
-    </div>  */}
-    <div className='a1  c1 c2'>
-      <div className='b c'></div>
-    </div>
-    <div className='c1'>
-      <div className='b '></div>
-    </div>
-    <div className='a1  c1'>
-      <div className='b c1'></div>
+    <div className={`${aa} ${bb()}`}></div>
+    <div className="a d a1">
+      
     </div>
   </TestView>
 }

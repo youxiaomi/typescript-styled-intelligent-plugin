@@ -353,16 +353,35 @@ class ScssService {
             }
           }
           // .a+.b 
-          // if(cssSelectNode.combinatorSibling){
-          //   // let domNodeParent = domNode.parent
-          //   // let prevNodeHasSelector = domNodeParent?.selectors.find(selectolr => selectolr.fullText ==cssNode.combinatorSiblingNode?.nodeText )
-          //   // if(!prevNodeHasSelector){
-          //   //   return
-          //   // }
-          // }
-          // if(cssSelectNode.combinatorParent){
+          if(cssSelectNode.combinatorSiblingNodes.size){
+            let index = domNode.parent?.children.findIndex(child => child == domNode) || -1
+            if(index && index < 0){
+              return
+            }
 
-          // }
+            let prevDomNode = domNode.parent?.children[index - 1]
+            if(!prevDomNode){
+              return
+            }
+            let notFoundCombineSlibling = Array.from(cssSelectNode.combinatorSiblingNodes).find(combinatorSiblingNode=>{
+              return !prevDomNode?.selectors.find(selector=>{
+                return selector.fullText == combinatorSiblingNode.nodeText
+              })     
+            })
+            if(notFoundCombineSlibling){
+              return
+            }
+          }
+          if(cssSelectNode.combinatorParents.size){
+            let notFoundCombineParent = Array.from(cssSelectNode.combinatorParents).find(combineParent=>{
+              return !domNode.parent?.selectors.find(selector=>{
+                return selector.fullText == combineParent.nodeText
+              })
+            })
+            if(notFoundCombineParent){
+              return
+            }
+          }
           let currentStyleMatchNode = cssMatchNodes.get(cssSelectNode.node.offset) || new Set()
           currentStyleMatchNode.add(domSelector)
           cssMatchNodes.set(cssSelectNode.node.offset, currentStyleMatchNode)
@@ -402,86 +421,86 @@ class ScssService {
     }
   }
 
-  matchCssSelectorNodes2(domTree: CssSelectorNode,styleTree: CssSelectorNode){
-    console.log(123123)
-    let domNode = domTree
-    let styleNode = styleTree
-    const styleMatchNodes =  new Map<number,Set<CssSelectorNode>>([
-      [styleTree.c_id, new Set([domNode])]
-    ]);
-    const domMatchNodes = new Map<number,Set<CssSelectorNode>>(
-      [
-        [domNode.c_id, new Set([styleTree])]
-      ]
-    )
-    // matchNode(domNode,styleTree)
+  // matchCssSelectorNodes2(domTree: CssSelectorNode,styleTree: CssSelectorNode){
+  //   console.log(123123)
+  //   let domNode = domTree
+  //   let styleNode = styleTree
+  //   const styleMatchNodes =  new Map<number,Set<CssSelectorNode>>([
+  //     [styleTree.c_id, new Set([domNode])]
+  //   ]);
+  //   const domMatchNodes = new Map<number,Set<CssSelectorNode>>(
+  //     [
+  //       [domNode.c_id, new Set([styleTree])]
+  //     ]
+  //   )
+  //   // matchNode(domNode,styleTree)
 
-    function matchNode (domNode,styleNode){
+  //   function matchNode (domNode,styleNode){
 
-      if(isSame(domNode,styleNode)){
-        let currentStyleMatchNode = styleMatchNodes.get(styleNode.c_id) || new Set()
-        currentStyleMatchNode.add(domNode)
-        styleMatchNodes.set(styleNode.c_id, currentStyleMatchNode)
-        let currentDomMatchNode = domMatchNodes.get(domNode.c_id)|| new Set()
-        currentDomMatchNode.add(styleNode)
-        domMatchNodes.set(styleNode.c_id, currentDomMatchNode)
-      }
-      let children = domNode.children;
-      children.forEach(domNode=>{
-        matchNode(domNode,styleNode)
-      })
-    }
-    let currentStyleNode = styleNode
-    // while()
+  //     if(isSame(domNode,styleNode)){
+  //       let currentStyleMatchNode = styleMatchNodes.get(styleNode.c_id) || new Set()
+  //       currentStyleMatchNode.add(domNode)
+  //       styleMatchNodes.set(styleNode.c_id, currentStyleMatchNode)
+  //       let currentDomMatchNode = domMatchNodes.get(domNode.c_id)|| new Set()
+  //       currentDomMatchNode.add(styleNode)
+  //       domMatchNodes.set(styleNode.c_id, currentDomMatchNode)
+  //     }
+  //     let children = domNode.children;
+  //     children.forEach(domNode=>{
+  //       matchNode(domNode,styleNode)
+  //     })
+  //   }
+  //   let currentStyleNode = styleNode
+  //   // while()
 
-    let domNodes = styleMatchNodes.get(styleNode.c_id)  || new Set();
-    let styleNodes = domMatchNodes.get(domNode.c_id) || new Set();
-    matchStyleChildNode(domNodes,styleNodes)
+  //   let domNodes = styleMatchNodes.get(styleNode.c_id)  || new Set();
+  //   let styleNodes = domMatchNodes.get(domNode.c_id) || new Set();
+  //   matchStyleChildNode(domNodes,styleNodes)
 
-    function matchStyleChildNode(domNodes, styleNodes) {
-      // let domNodes = styleMatchNodes.get(styleNode.c_id)  || new Set();
-      // let styleNodes = domMatchNodes.get(domNode.c_id) || new Set();
-      styleNodes.forEach((styleNode) => {
-        domNodes?.forEach((domNode) => {
-          matchNode(domNode, styleNode);
-          let styleChildren = styleNode.children
-          let domNodes = styleMatchNodes.get(styleNode.c_id) || new Set();
-          domNodes.forEach(domNode => {
-            matchStyleChildNode(domNode.children, styleChildren)
-          })
-        })
+  //   function matchStyleChildNode(domNodes, styleNodes) {
+  //     // let domNodes = styleMatchNodes.get(styleNode.c_id)  || new Set();
+  //     // let styleNodes = domMatchNodes.get(domNode.c_id) || new Set();
+  //     styleNodes.forEach((styleNode) => {
+  //       domNodes?.forEach((domNode) => {
+  //         matchNode(domNode, styleNode);
+  //         let styleChildren = styleNode.children
+  //         let domNodes = styleMatchNodes.get(styleNode.c_id) || new Set();
+  //         domNodes.forEach(domNode => {
+  //           matchStyleChildNode(domNode.children, styleChildren)
+  //         })
+  //       })
 
-      })
+  //     })
 
-    }
-
-
-    function isSame(domNode:CssSelectorNode,styleNode:CssSelectorNode){
-      let sourceCssNode = domNode.node
-      let targetCssNode = styleNode.node
-      let isSame = targetCssNode.type == sourceCssNode.type && domNode.nodeText == styleNode.nodeText
+  //   }
 
 
-      let styleSiblings = Array.from(styleNode.parent?.children || []);
-      if (isSame && styleNode.siblings.size) {
-        let domSiblings = Array.from(domNode.siblings)
-        for (let sibling of styleSiblings) {
-          let notFound = !domSiblings.find(domSibling => domSibling.nodeText == sibling.nodeText)
-          if (notFound) {
-            isSame = false
-            break
-          }
-        }
-      }
-      return isSame
-    }
+  //   function isSame(domNode:CssSelectorNode,styleNode:CssSelectorNode){
+  //     let sourceCssNode = domNode.node
+  //     let targetCssNode = styleNode.node
+  //     let isSame = targetCssNode.type == sourceCssNode.type && domNode.nodeText == styleNode.nodeText
 
-    return {
-      styleMatchNodes,
-      domMatchNodes
-    }
 
-  }
+  //     let styleSiblings = Array.from(styleNode.parent?.children || []);
+  //     if (isSame && styleNode.siblings.size) {
+  //       let domSiblings = Array.from(domNode.siblings)
+  //       for (let sibling of styleSiblings) {
+  //         let notFound = !domSiblings.find(domSibling => domSibling.nodeText == sibling.nodeText)
+  //         if (notFound) {
+  //           isSame = false
+  //           break
+  //         }
+  //       }
+  //     }
+  //     return isSame
+  //   }
+
+  //   return {
+  //     styleMatchNodes,
+  //     domMatchNodes
+  //   }
+
+  // }
   matchCssSelectorNodes(targeTree: CssSelectorNode,sourceTree: CssSelectorNode,isMatchTarge = false){
     let matchSourceNodes: Set<CssSelectorNode> = new Set()
     let matchTargetNodes: Set<CssSelectorNode> = new Set()

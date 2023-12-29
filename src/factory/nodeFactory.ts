@@ -244,11 +244,14 @@ export function createStyleSheetAbstractSyntaxTree(cssNode: CssNode.Node):CssSel
     while(!childNext.done){
       let child = childNext.value
       if(child.type == NodeType.SimpleSelector){
-        let {isSelectorCombinator, nodes} = SimpleSelectorv2(child as CssNode.SimpleSelector, parents)
+        let {isSelectorCombinator, nodes} = SimpleSelectorv2(child as CssNode.SimpleSelector)
         if(isSelectorCombinator){
           _nodes.forEach(node=>{
             nodes.forEach(spNode=>{
               // node.addSibling(spNode)
+              node.parents.forEach(parent=>{
+                parent.addChild(spNode)
+              })
               spNode.addSibling(node)
             })
           })
@@ -267,7 +270,7 @@ export function createStyleSheetAbstractSyntaxTree(cssNode: CssNode.Node):CssSel
       //>
       if(child.type == NodeType.SelectorCombinatorParent){
         childNext  = childrenEntries.next()
-        let {isSelectorCombinator, nodes} = SimpleSelectorv2(childNext.value as CssNode.SimpleSelector, parents)
+        let {isSelectorCombinator, nodes} = SimpleSelectorv2(childNext.value as CssNode.SimpleSelector)
         _nodes.forEach(node=>{
           nodes.forEach(spNode=>{
             node.addChild(spNode)
@@ -280,7 +283,7 @@ export function createStyleSheetAbstractSyntaxTree(cssNode: CssNode.Node):CssSel
       //+
       if(child.type == NodeType.SelectorCombinatorSibling){
         childNext  = childrenEntries.next()
-        let {isSelectorCombinator, nodes} = SimpleSelectorv2(childNext.value as CssNode.SimpleSelector, parents)
+        let {isSelectorCombinator, nodes} = SimpleSelectorv2(childNext.value as CssNode.SimpleSelector)
         _nodes.forEach(node=>{
           node.parents.forEach((parent)=>{
             nodes.forEach(spNode=>{
@@ -321,7 +324,6 @@ export function createStyleSheetAbstractSyntaxTree(cssNode: CssNode.Node):CssSel
   }
   function SimpleSelectorv2(
     simpleSelector:CssNode.SimpleSelector,
-    parents:CssSelectorNode[],
     ){
     let children = simpleSelector.getChildren()
     let isSelectorCombinator = false
