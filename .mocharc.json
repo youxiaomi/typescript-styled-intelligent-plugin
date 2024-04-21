@@ -1,4 +1,4 @@
 {
-  "loader": "ts-node/esm",
-  "extensions": ["ts", "tsx"]
+  "loader1": "ts-node/esm",
+  "extensions1": ["ts", "tsx"]
 }

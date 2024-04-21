@@ -4,6 +4,17 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+    {
+        "name": "unit test",
+        "program": "${workspaceFolder}/src/test/suggestion/StyledDomSelectorSuggest.test.ts",
+        "request": "launch",
+        "runtimeExecutable": "npm",
+        "runtimeArgs": ["run","test"],
+        "skipFiles": [
+            "<node_internals>/**"
+        ],
+        "type": "node"
+    },
         // {
         //     "type": "node",
         //     "name": "pool",

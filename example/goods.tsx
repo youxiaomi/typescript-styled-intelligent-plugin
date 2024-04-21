@@ -1,5 +1,5 @@
 import React from 'react'
-import { User } from "./index"
+import { User } from "./base"
 import Components from './components'
 
 

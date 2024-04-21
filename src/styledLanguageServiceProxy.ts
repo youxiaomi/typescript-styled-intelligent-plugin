@@ -38,7 +38,8 @@ export default class StyledLanguageServiceProxy {
         return result
       }
     }catch(e:any){
-      console.log('error---',e.stack);
+      console.error('error---',e.stack);
+      throw e
     }
    
     try{
@@ -49,9 +50,10 @@ export default class StyledLanguageServiceProxy {
       let result = cssSelectorParse.getDomSelectorByStyledTemplateSelector(fileName,position);
       return result
     }catch(e:any){
-      console.log('error---',e.stack);
+      console.error('error---',e.stack);
+      throw e
     }
-  }className
+  }
   private tryGetDefinitionAndBoundSpan = (delegate) => {
 
     return (fileName: string, position: number, ...rest: any[]) => {
@@ -71,10 +73,6 @@ export default class StyledLanguageServiceProxy {
     for (let name in this.intercepts) {
       (intercept[name] as any) = this.intercepts[name](languageService[name]!.bind(languageService))
     }
-
-    // for (const { name, wrapper } of this._wrappers) {
-    //   (intercept[name] as any) = wrapper(languageService[name]!.bind(languageService));
-    // }
 
     return new Proxy(languageService, {
       get: (target: any, property: string | symbol) => {

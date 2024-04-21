@@ -91,12 +91,6 @@ export default class CssSelectorParser{
       let cssService = getScssService();
       let definitions: ts.DefinitionInfo[] = []
       parseCssSelectors.forEach(parseCssSelector => {
-        let cssScan = cssService.getStyleSheetScanByJsxElementNode(parseCssSelector, targetSelector);
-        // new TemplateStringContext();
-        // let formatStyleSheet = cssService.fromatText(cssService.getDefaultCssTextDocument(cssScan.getText()))
-        // let cssDoc = cssService.getDefaultCssTextDocument(formatStyleSheet)
-        // let cssDoc = cssService.getDefaultCssTextDocument(cssScan.getText())
-        // let styleSheet = cssService.getScssStyleSheet(cssDoc)
         let context = new TemplateStringContext(template!, this.tsHelp, this.typescript)
         let doc = cssService.generateCssTextDocument(context);
 
@@ -104,12 +98,7 @@ export default class CssSelectorParser{
         let currentStyledComponentStyleSheet = cssService.getScssStyleSheet(doc)
         let targetTree = createStyleSheetAbstractSyntaxTree(currentStyledComponentStyleSheet)
 
-
-        // let sourceTree = createStyleSheetAbstractSyntaxTree(styleSheet)
-        //dom  csstext cssNode   cssSelectNode
         logger.info(currentStyledComponentStyleSheet.getText())
-        // logger.info(styleSheet.getText())
-        // const { matchSourceNodes, matchTargetNodes } = cssService.matchCssSelectorNodes(targetTree, sourceTree);
 
         const {cssMatchNodes,domMatchNodes} = cssService.matchCssSelectorNode3(parseCssSelector,targetTree);
         let matchTargetNodes = domMatchNodes.get(targetSelector.selectorStart) || new Set()
@@ -148,9 +137,6 @@ export default class CssSelectorParser{
     return definitions
 
   }
-  /**
-   *  @todo  优化样式表额外匹配
-   */
   getDomSelectorByStyledTemplateSelector(fileName: string, position: number):ts.DefinitionInfoAndBoundSpan | undefined{
     let program = this.languageService.getProgram()
     let sourceFile = program?.getSourceFile(fileName);
@@ -177,25 +163,14 @@ export default class CssSelectorParser{
       let cssSelectorDomNodes = this.parseCssSelector(referenceNode as ts.JsxElement);
       cssSelectorDomNodes.map(cssSelectorDomNode => {
         if (cssSelectorDomNode.type == 'styledElement') {
-          // let cssScan = cssService.getStyleSheetScanByJsxElementNode(cssSelectorDomNode);
-          // let cssText = cssScan.getText()
-          // let cssdoc = cssService.getDefaultCssTextDocument(cssText)
-          // let styleSheet = cssService.getScssStyleSheet(cssdoc);
-          // let sourceTree = createStyleSheetAbstractSyntaxTree(styleSheet)
-
-
-          // let targetTree = createStyleSheetAbstractSyntaxTree(targetStyleSheet!)
           let targetTree = createStyleSheetAbstractSyntaxTree(templateNodeStyleSheet)
-          let offset = cssTextDocument.getOffset(position)
-          let csnode = cssService.findCssSelctorNode(targetTree,offset)
 
           const {  cssMatchNodes,domMatchNodes}  = cssService.matchCssSelectorNode3(cssSelectorDomNode,targetTree);
 
-
-          // let { matchSourceNodes, matchTargetNodes } = cssService.matchCssSelectorNodes(targetTree, sourceTree, true)
           let matchSourceNodes = Array.from(cssMatchNodes.get(targetNode?.offset || 0) || new Set<JsxElementSelector>())
           let result = matchSourceNodes
           result.forEach(res => {
+            let fileName = res.tsNode.getSourceFile().fileName
             definitions.push({
               fileName: fileName,
               kind: ts.ScriptElementKind.string,
@@ -203,31 +178,12 @@ export default class CssSelectorParser{
               containerKind: ts.ScriptElementKind.variableElement,
               containerName: '',
               textSpan: {
-                start: res.tsNode.getStart(),
-                length: res.tsNode.getText().length,
+                start: res.offset,
+                // length: res.tsNode.getText().length,
+                length: res.text.length,
               }
             })
           })
-          // let result = Array.from(matchSourceNodes).map(item => item.node)
-          // result.forEach(res => {
-          //   let textNode = cssScan.getTextNode(cssdoc.getOffsetInFile(res.offset))
-          //   if (textNode?.node.type == "classNameSelector" || textNode?.node.type == "idSelector") {
-          //     let node = textNode.node
-          //     let tsNode = textNode?.node.tsNode
-          //     let fileName = tsNode.getSourceFile().fileName
-          //     definitions.push({
-          //       fileName: fileName,
-          //       kind: ts.ScriptElementKind.string,
-          //       name: '',
-          //       containerKind: ts.ScriptElementKind.variableElement,
-          //       containerName: '',
-          //       textSpan: {
-          //         start: node.offset,
-          //         length: node.text.length,
-          //       }
-          //     })
-          //   }
-          // })
         }
       })
     }
