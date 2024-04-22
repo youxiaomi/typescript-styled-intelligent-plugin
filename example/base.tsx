@@ -9,7 +9,7 @@ const IndexView = styled.div`
 
     }
     .user{
-      &.user2{
+      &.user2,.testUser2{
 
       }
     }
@@ -18,6 +18,14 @@ const IndexView = styled.div`
     }
     .user+.name{
 
+    }
+    .user{
+      &+.name{
+
+      }
+      .name{
+
+      }
     }
   }
 `
@@ -32,7 +40,8 @@ class IndexClass extends React.Component{
             <div className='name'></div>
           </div>
         </div>
-        <div className='test user'>
+        <div className=' name testSiblingSelector'></div>
+        <div className='test  user'>
           <div>
             <div className='name'></div>
           </div>

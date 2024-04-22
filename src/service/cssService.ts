@@ -354,8 +354,9 @@ class ScssService {
           }
           // .a+.b 
           if(cssSelectNode.combinatorSiblingNodes.size){
-            let index = domNode.parent?.children.findIndex(child => child == domNode) || -1
-            if(index && index < 0){
+            let index = domNode.parent?.children.findIndex(child => child == domNode)
+            if(index === undefined)return
+            if(index < 0){
               return
             }
 

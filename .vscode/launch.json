@@ -6,7 +6,6 @@
     "configurations": [
     {
         "name": "unit test",
-        "program": "${workspaceFolder}/src/test/suggestion/StyledDomSelectorSuggest.test.ts",
         "request": "launch",
         "runtimeExecutable": "npm",
         "runtimeArgs": ["run","test"],
