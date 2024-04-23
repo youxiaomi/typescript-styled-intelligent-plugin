@@ -1,22 +1,24 @@
 
 import * as ts from 'typescript/lib/tsserverlibrary'
+import fs from 'fs'
+import path from 'path'
 
-const options = {
-  rootNames: ['./example/index.tsx'],
-  options:{
-    // baseUrl:'../../example'
-    // noEmitOnError: false
-  }
+const options:ts.CompilerOptions = {
+  baseUrl: path.join(process.cwd(),'example'),
+  // rootNames: ['./example/index.tsx'],
+  // options:{
+  //   // baseUrl:'../../example'
+  //   // noEmitOnError: false
+  // }
 }
 
 
 const host: ts.LanguageServiceHost = {
   getCurrentDirectory: () => "./example",
   getCompilationSettings:()=> options,
-  getScriptFileNames:()=>[
-    "./example/index.tsx",
-    "./example/base.tsx",
-  ],
+  getScriptFileNames:()=>{
+    return fs.readdirSync('./example').filter((item)=>item.endsWith('.tsx')).map(item => path.join(process.cwd(),'./example',item))
+  },
   // getProjectReferences:()=>["./example/index.tsx"],
   getScriptVersion:(fileName: string)=>{
     // debugger
@@ -24,16 +26,11 @@ const host: ts.LanguageServiceHost = {
   },
   getDefaultLibFileName: ts.getDefaultLibFileName,
   readFile: (path)=>{
-    // debugger
-    console.log(path,'read file')
     return ts.sys.readFile(path)
   },
   // getScriptSnapshot: ts,
   getScriptSnapshot(fileName) {
-    console.log(fileName,'snapshop')
-    if (fileName.slice(-4) === ".tsx") {
-      // debugger
-    }
+
     return ts.ScriptSnapshot.fromString(ts.sys.readFile(fileName) || "");
     // return ts.ScriptSnapshot.fromString(files[fileName] || "");
   },

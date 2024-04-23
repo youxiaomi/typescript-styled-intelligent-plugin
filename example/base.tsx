@@ -27,10 +27,17 @@ const IndexView = styled.div`
 
       }
     }
+    #testMethod{}
   }
 `
 
 class IndexClass extends React.Component{
+
+  renderMethod(){
+
+    return <div id='testMethod'></div>
+  }
+
   render(){
     return <IndexView>
       <div className='index'>
@@ -46,36 +53,8 @@ class IndexClass extends React.Component{
             <div className='name'></div>
           </div>
         </div>
+        {this.renderMethod()}
       </div>
     </IndexView>
   }
-}
-
-const IndexArrowFunction  = ()=>{
-  return <IndexView>
-
-  </IndexView>
-}
-
-function IndexFunction (){
-
-  return <IndexView>
-
-  </IndexView>
-}
-
-
-
-
-
-export default ()=>{
-
-
-  return <div>
-    <IndexClass></IndexClass>
-    <IndexArrowFunction></IndexArrowFunction>
-    <IndexFunction></IndexFunction>
-  </div>
-
-
 }
