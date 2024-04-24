@@ -5,10 +5,11 @@ import styled from 'styled-components'
 
 const IndexView = styled.div`
   .index{
+    div .user2{}
     .user,.user2{
 
     }
-    .user{
+    .user{/*testuser1*/
       &.user2,.testUser2{
 
       }
@@ -19,7 +20,7 @@ const IndexView = styled.div`
     .user+.name{
 
     }
-    .user{
+    .user{/*testuser2*/
       &+.name{
 
       }
@@ -50,7 +51,7 @@ class IndexClass extends React.Component{
         <div className=' name testSiblingSelector'></div>
         <div className='test  user'>
           <div>
-            <div className='name'></div>
+            <div className='name'></div>{/**+name*/}
           </div>
         </div>
         {this.renderMethod()}

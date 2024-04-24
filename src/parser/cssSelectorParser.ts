@@ -104,6 +104,7 @@ export default class CssSelectorParser{
         let matchTargetNodes = domMatchNodes.get(targetSelector.selectorStart) || new Set()
         let cssNodes = Array.from(matchTargetNodes).map(item => item.node)
         cssNodes = unique(cssNodes, (pre, current) => pre.offset == current.offset);
+        let offset = 0
         cssNodes = cssNodes.filter(item => {
           let selectorText = item.getText()
           if ([NodeType.ClassSelector, NodeType.IdentifierSelector].includes(item.type)) {

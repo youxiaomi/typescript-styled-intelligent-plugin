@@ -6,31 +6,11 @@ import * as ts from 'typescript/lib/tsserverlibrary'
 import 'mocha'
 import assert from 'assert'
 import path from 'path';
-
-function getPath(filePath:string){
-  return path.join(process.cwd(),filePath)
-}
-function verifyDefinitions(result:ts.DefinitionInfoAndBoundSpan|undefined,definitionConfigs:DefinitionConfig[]){
-  assert.equal(result?.definitions?.length, definitionConfigs.length)
-  definitionConfigs.forEach((item,index)=>{
-    let definition = result?.definitions?.[index]
-    let start = definition?.textSpan.start
-    assert.equal(start, item.getStart(),`index:${index}`)
-  })
-}
-
-class DefinitionConfig{
-  constructor(public classNameSelector:string,public prefix:string,public fileText:string = '',public suffix:string = ''){
+import { DefinitionConfig, getPath, verifyDefinitions } from '../utils/utils';
 
 
-  }
-  getStart(){
-    let resultPos = this.fileText?.indexOf(`${this.prefix}${this.classNameSelector}${this.suffix}`) || 0
-    resultPos+=this.prefix.length
-    return resultPos
-  }
 
-}
+
 let tsHelp = new TsHelp(ts, languageService);
 let cssSelectorParser = new CssSelectorParser(ts, languageService, tsHelp)
 let program = languageService.getProgram()
@@ -77,7 +57,7 @@ describe('StyledDomSelectorSuggest base', () => {
     verifyDefinitions(result,definitionConfigs)
   })
 
-  it(`show + select`, () => {
+  it(`test dom + select`, () => {
     let pos = new DefinitionConfig(`name`, `&+.`, text).getStart()
     let result = cssSelectorParser.getDomSelectorByStyledTemplateSelector(filePath, pos)
     let definitionConfigs = [
@@ -93,22 +73,18 @@ describe('StyledDomSelectorSuggest base', () => {
     ]
     verifyDefinitions(result, definitionConfigs)
   })
+  it(`test class selector sibling`,()=>{
+    
+    let pos = new DefinitionConfig(`user2`, `.user.`, text).getStart()
+    let result = cssSelectorParser.getDomSelectorByStyledTemplateSelector(filePath, pos)
+    let definitionConfigs = [
+      new DefinitionConfig(`user2`, `className='user `, text,),
+    ]
+    verifyDefinitions(result, definitionConfigs)
+  })
 })
 
-// describe(`dom cross component`,()=>{
 
-//   let filePath = getPath('example/crossComponent.tsx')
-//   let file = program?.getSourceFile(filePath);
-//   let text = file?.getFullText();
-//   it(`show cross component selector`, () => {
-//     let pos = new DefinitionConfig(`user-name`, `.`, text).getStart()
-//     let result = cssSelectorParser.getDomSelectorByStyledTemplateSelector(filePath, pos)
-//     let definitionConfigs = [
-//       new DefinitionConfig(`user-name`, `className="`, text),
-//     ]
-//     verifyDefinitions(result, definitionConfigs)
-//   })
-// })
 
 
 describe(`dom cross file`,()=>{

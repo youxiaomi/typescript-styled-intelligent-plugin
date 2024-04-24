@@ -24,6 +24,6 @@
   "scripts": {
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "test": "mocha out/test/suggestion/StyledDomSelectorSuggest.test.js --trace-warnings"
+    "test": "mocha out/test/suggestion --trace-warnings"
   }
 }
