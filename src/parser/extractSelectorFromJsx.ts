@@ -274,6 +274,14 @@ export default function extractSelectorFromJsx({ node, languageService, tsHelp, 
         parentJsxElementNode && parentJsxElementNode.addChild(jsxElementNode)
         scope.addJsxElementNodeToScope(jsxElementNode)
         if( node.kind == ts.SyntaxKind.JsxElement){
+          function addElementSelector(tagName:ts.JsxElement["openingElement"]["tagName"]){
+            let ele = tagName.getText();
+            let eleSelector = new JsxElementSelector(tagName,jsxElementNode,'element')
+            eleSelector.text = ele
+            eleSelector.offset = tagName.getStart()
+            jsxElementNode.addSelector(eleSelector)
+          }
+          addElementSelector(node.openingElement.tagName)
           parseSelector(node.openingElement.attributes,scope.getChildScope()) 
         }
         parseChildren(children,scope.getChildScope())

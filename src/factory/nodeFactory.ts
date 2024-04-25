@@ -554,16 +554,21 @@ export class TargetSelector{
   }
 }
 
-const selectors = {
+const selectors:{
   'id': 'idSelector',
-  "className": 'classNameSelector'
+  "className": 'classNameSelector',
+  "element": 'elementSelector'
+} = {
+  'id': 'idSelector',
+  "className": 'classNameSelector',
+  "element": 'elementSelector'
 }
 export class JsxElementSelector{
   type:'idSelector'|'classNameSelector'|'elementSelector'
   _text = ''
   offset = 0
   fullText = ''
-  constructor(readonly tsNode:ts.Node,readonly parent: JsxElementNode,selectorName:string){
+  constructor(readonly tsNode:ts.Node,readonly parent: JsxElementNode,selectorName:keyof typeof selectors | string){
    
     this.type = selectors[selectorName] || 'elementSelector'
   }

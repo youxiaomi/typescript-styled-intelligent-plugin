@@ -62,6 +62,7 @@ describe('StyledCssSelectorSuggest base', () => {
     let pos =  new DefinitionConfig(`user2`, `className='`, text,`'`).getStart()
     let result = cssSelectorParser.getStyledTemplateSelectorByDomSelector(filePath, pos)
     let definitionConfigs = [
+      new DefinitionConfig(`.user2`, `div `, text,`{`),
       new DefinitionConfig(`.user2`, `.user,`, text,`{`),
     ]
     verifyDefinitions(result,definitionConfigs)

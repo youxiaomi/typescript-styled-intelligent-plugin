@@ -82,6 +82,14 @@ describe('StyledDomSelectorSuggest base', () => {
     ]
     verifyDefinitions(result, definitionConfigs)
   })
+  it(`test selector of parent element `,()=>{
+    let pos = new DefinitionConfig(`user2`, `div .`, text,`{}`).getStart()
+    let result = cssSelectorParser.getDomSelectorByStyledTemplateSelector(filePath, pos)
+    let definitionConfigs = [
+      new DefinitionConfig(`user2`, `className='`, text,`'>{/*user2 mark1*/}`),
+    ]
+    verifyDefinitions(result, definitionConfigs)
+  })
 })
 
 

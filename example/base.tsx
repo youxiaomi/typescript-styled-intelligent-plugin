@@ -44,7 +44,7 @@ class IndexClass extends React.Component{
       <div className='index'>
         <div className='user user2'></div>
         <div className='user'>
-          <div className='user2'>
+          <div className='user2'>{/*user2 mark1*/}
             <div className='name'></div>
           </div>
         </div>
