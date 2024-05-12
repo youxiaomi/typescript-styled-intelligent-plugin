@@ -10,6 +10,7 @@ This repo has two projects:
 
 - `/` is a Typescript Plugin 
 - `/example` is a example use Typescript-styled-intelligent-plugin
+![](documentation/preview.gif)
 
 
 ### Usage
