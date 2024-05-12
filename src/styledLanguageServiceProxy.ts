@@ -9,26 +9,17 @@ import TsHelp from './service/tsHelp';
 type LanguageServiceMethodWrapper<K extends keyof ts.LanguageService>= (delegate: ts.LanguageService[K], info?: ts.server.PluginCreateInfo) => ts.LanguageService[K];
 
 export default class StyledLanguageServiceProxy {
-  constructor( typescript: typeof ts, languageService: ts.LanguageService,  project: ts.server.Project,info) {
-    this.typescript = typescript
-    this.languageService = languageService
+  constructor(public typescript: typeof ts, public languageService: ts.LanguageService, public project: ts.server.Project,public info) {
     this.intercepts.getDefinitionAndBoundSpan = this.tryGetDefinitionAndBoundSpan
     this.helper = new StandardTemplateSourceHelper(
       typescript,
       {tags:['styled'],enableForStringWithSubstitutions: true},
-      new StandardScriptSourceHelper(typescript,project),
-      {
-        log:()=>{}
-      }
-      )
-
-      this.info = info
+      new StandardScriptSourceHelper(typescript,project),{log:()=>{}} 
+    )
+    this.info = info
   }
-  languageService: ts.LanguageService
   helper: StandardTemplateSourceHelper
-  typescript: typeof ts
   intercepts: Partial<{ [name in keyof ts.LanguageService]: LanguageServiceMethodWrapper<any> }> = {}
-  info:any
   private getDefinitionAndBoundSpan(fileName: string, position: number): ts.DefinitionInfoAndBoundSpan | undefined {
     const tsHelp = new TsHelp(this.typescript, this.languageService);
     const cssSelectorParse = new CssSelectorParser(this.typescript, this.languageService, tsHelp);
@@ -53,6 +44,7 @@ export default class StyledLanguageServiceProxy {
       console.error('error---',e.stack);
       throw e
     }
+
   }
   private tryGetDefinitionAndBoundSpan = (delegate) => {
 

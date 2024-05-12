@@ -11,12 +11,12 @@ export class JsxParser extends AbstractParser{
     this.iterateParentParser = new IterateParentParser(this.typescript,this.languageService,this.tsHelp)
   }
   iterateParentParser: IterateParentParser
-  findJsxOpeningElementOfParent(node:ts.Node){
-    // return this.iterateParentParser.findStyledElement(node)
-  }
-  findJsxClassAttrOfParent(){
+  // findJsxOpeningElementOfParent(node:ts.Node){
+  //   // return this.iterateParentParser.findStyledElement(node)
+  // }
+  // findJsxClassAttrOfParent(){
 
-  }
+  // }
   findStyledNodeOfParent(node){
     return this.iterateParentParser.findParentNodes(node,'styledElement',{isAllParent:true})
   }
@@ -37,7 +37,6 @@ class IterateParentParser extends AbstractParser{
     if(!node){
       return []
     }
-    logger.info(node.getFullText())
     switch(node.kind){
       case ts.SyntaxKind.VariableDeclaration:
       case ts.SyntaxKind.PropertyAssignment:
@@ -78,6 +77,7 @@ class IterateParentParser extends AbstractParser{
  
     let parentReferenceNodes: ParentReferenceNode[] = []
     references.forEach((reference=>{
+      let sourceFile = this.programe.getSourceFile(reference.fileName)
       let node =  this.tsHelp.findNode(sourceFile!,reference.textSpan.start)
       if(node){
         parentReferenceNodes.push({
@@ -94,7 +94,6 @@ class IterateParentParser extends AbstractParser{
     let nodes:ParentReferenceNode[] = [{tsNode: node, type:'node'}];
     while(nodes.length && parentReferenceNodes.length < 6){
       let currentNode = nodes.shift()
-      logger.info(currentNode?.tsNode.getFullText())
       if(currentNode){
         if(currentNode.type == type){
           parentReferenceNodes.push(currentNode)
@@ -112,9 +111,9 @@ class IterateParentParser extends AbstractParser{
   findStyledElement(node,isAllParent = false){
     return this.findParentNodes(node,'styledElement',{isAllParent})
   }
-  findAllStyledElement(){
+  // findAllStyledElement(){
 
-  }
+  // }
   findTopStyledElement(node){
     let nodes =  this.findParentNodes(node,'styledElement',{isAllParent:true})
     return nodes[nodes.length - 1]
@@ -129,12 +128,12 @@ class IterateParentParser extends AbstractParser{
     }
     return []
   }
-  findJsxClassName(node){
+  // findJsxClassName(node){
     
-  }
-  findJsxId(node){
+  // }
+  // findJsxId(node){
 
-  }
+  // }
  
   findJsxOpeningElement(jsxNode: ts.JsxElement):ParentReferenceNode[]{
     let node = jsxNode.openingElement

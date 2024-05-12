@@ -64,7 +64,10 @@ export default class CssSelectorParser{
     if(!styledComponentNode.length){
       return
     }
-    let definitions = this.getTemplateSelectorDefinitions(ts.last(styledComponentNode), targetSelector);
+    // let definitions = this.getTemplateSelectorDefinitions(ts.last(styledComponentNode), targetSelector);
+    let definitions = flatten(styledComponentNode.map((item)=>{
+      return this.getTemplateSelectorDefinitions(item, targetSelector);
+    }))
     if(!definitions.length){
       return undefined
     }
@@ -98,7 +101,6 @@ export default class CssSelectorParser{
         let currentStyledComponentStyleSheet = cssService.getScssStyleSheet(doc)
         let targetTree = createStyleSheetAbstractSyntaxTree(currentStyledComponentStyleSheet)
 
-        logger.info(currentStyledComponentStyleSheet.getText())
 
         const {cssMatchNodes,domMatchNodes} = cssService.matchCssSelectorNode3(parseCssSelector,targetTree);
         let matchTargetNodes = domMatchNodes.get(targetSelector.selectorStart) || new Set()
@@ -157,7 +159,6 @@ export default class CssSelectorParser{
       return undefined
     }
     let referenceNodes = omitUndefined(this.tsHelp.getReferenceNodes(fileName, tagVariableDeclarationNode.pos));
-    //todo
     referenceNodes = omitUndefined(referenceNodes.map(this.tsHelp.getJsxElementOfIdentifer))
     referenceNodes = unique(referenceNodes)
     const findDefinition = (referenceNode) => {

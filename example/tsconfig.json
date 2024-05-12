@@ -1,14 +1,14 @@
 {
   "compilerOptions": {
     // This matches the package name given in this package.json
-    "plugins": [
-      {
-        "name": "vscode-styled-plugin",
-      },
-      // {
-      //   "name": "typescript-styled-plugin"
-      // }
-    ],
+    // "plugins": [
+    //   {
+    //     "name": "vscode-styled-plugin",
+    //   },
+    //   // {
+    //   //   "name": "typescript-styled-plugin"
+    //   // }
+    // ],
     "jsx": "react",
     // Everything below is just the default for `tsc --init`
 

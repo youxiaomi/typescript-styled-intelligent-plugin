@@ -199,7 +199,6 @@ class ScssService {
   }
   extractDomNode = (node: JsxElementNode, targetSelector:TargetSelector)=>{
     function findTargetDomSelector(node: JsxElementNode,targetSelector:TargetSelector){
-      logger.info(node.tsNode.getText())
       let selector = node.selectors.find(selector=>{
         if(selector.type == "classNameSelector" || selector.type == "idSelector"){
           return selector.offset <= targetSelector.selectorStart && selector.offset + selector.text.length >= targetSelector.selectorStart
@@ -422,86 +421,6 @@ class ScssService {
     }
   }
 
-  // matchCssSelectorNodes2(domTree: CssSelectorNode,styleTree: CssSelectorNode){
-  //   console.log(123123)
-  //   let domNode = domTree
-  //   let styleNode = styleTree
-  //   const styleMatchNodes =  new Map<number,Set<CssSelectorNode>>([
-  //     [styleTree.c_id, new Set([domNode])]
-  //   ]);
-  //   const domMatchNodes = new Map<number,Set<CssSelectorNode>>(
-  //     [
-  //       [domNode.c_id, new Set([styleTree])]
-  //     ]
-  //   )
-  //   // matchNode(domNode,styleTree)
-
-  //   function matchNode (domNode,styleNode){
-
-  //     if(isSame(domNode,styleNode)){
-  //       let currentStyleMatchNode = styleMatchNodes.get(styleNode.c_id) || new Set()
-  //       currentStyleMatchNode.add(domNode)
-  //       styleMatchNodes.set(styleNode.c_id, currentStyleMatchNode)
-  //       let currentDomMatchNode = domMatchNodes.get(domNode.c_id)|| new Set()
-  //       currentDomMatchNode.add(styleNode)
-  //       domMatchNodes.set(styleNode.c_id, currentDomMatchNode)
-  //     }
-  //     let children = domNode.children;
-  //     children.forEach(domNode=>{
-  //       matchNode(domNode,styleNode)
-  //     })
-  //   }
-  //   let currentStyleNode = styleNode
-  //   // while()
-
-  //   let domNodes = styleMatchNodes.get(styleNode.c_id)  || new Set();
-  //   let styleNodes = domMatchNodes.get(domNode.c_id) || new Set();
-  //   matchStyleChildNode(domNodes,styleNodes)
-
-  //   function matchStyleChildNode(domNodes, styleNodes) {
-  //     // let domNodes = styleMatchNodes.get(styleNode.c_id)  || new Set();
-  //     // let styleNodes = domMatchNodes.get(domNode.c_id) || new Set();
-  //     styleNodes.forEach((styleNode) => {
-  //       domNodes?.forEach((domNode) => {
-  //         matchNode(domNode, styleNode);
-  //         let styleChildren = styleNode.children
-  //         let domNodes = styleMatchNodes.get(styleNode.c_id) || new Set();
-  //         domNodes.forEach(domNode => {
-  //           matchStyleChildNode(domNode.children, styleChildren)
-  //         })
-  //       })
-
-  //     })
-
-  //   }
-
-
-  //   function isSame(domNode:CssSelectorNode,styleNode:CssSelectorNode){
-  //     let sourceCssNode = domNode.node
-  //     let targetCssNode = styleNode.node
-  //     let isSame = targetCssNode.type == sourceCssNode.type && domNode.nodeText == styleNode.nodeText
-
-
-  //     let styleSiblings = Array.from(styleNode.parent?.children || []);
-  //     if (isSame && styleNode.siblings.size) {
-  //       let domSiblings = Array.from(domNode.siblings)
-  //       for (let sibling of styleSiblings) {
-  //         let notFound = !domSiblings.find(domSibling => domSibling.nodeText == sibling.nodeText)
-  //         if (notFound) {
-  //           isSame = false
-  //           break
-  //         }
-  //       }
-  //     }
-  //     return isSame
-  //   }
-
-  //   return {
-  //     styleMatchNodes,
-  //     domMatchNodes
-  //   }
-
-  // }
   matchCssSelectorNodes(targeTree: CssSelectorNode,sourceTree: CssSelectorNode,isMatchTarge = false){
     let matchSourceNodes: Set<CssSelectorNode> = new Set()
     let matchTargetNodes: Set<CssSelectorNode> = new Set()

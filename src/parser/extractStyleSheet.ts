@@ -17,7 +17,6 @@ const cssService = getScssService()
 export function extractStyleSheetSelectorWorkWrap(styleSheet:Nodes.Stylesheet,position:number,cssDoc:CssTextDocument){
   let  targetNode: Nodes.Node | undefined
   function extractSelector(node: Nodes.Selector) {
-    logger.info(node.getText(),'selector',NodeType[node.type]);
     let children = node.getChildren()
     let child =  children.find((node)=>extractSimpleSelector(node as Nodes.SimpleSelector));
     let text = node.getText()
@@ -30,7 +29,6 @@ export function extractStyleSheetSelectorWorkWrap(styleSheet:Nodes.Stylesheet,po
   function extractSimpleSelector(node: Nodes.SimpleSelector) {
     //.name.age
     // let {  getSelectors,getDeclarations } = node
-    logger.info(node.getText(),'SimpleSelector',NodeType[node.type]);
     let currentNodeOffset = cssDoc.getOffsetInFile(node.offset)
    
     if(currentNodeOffset <= position && position <= (currentNodeOffset + node.length)){

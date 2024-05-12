@@ -255,7 +255,6 @@ export default function extractSelectorFromJsx({ node, languageService, tsHelp, 
     }
     
     function extractJsxElement(node: ts.JsxElement| ts.JsxSelfClosingElement) {
-      logger.info(node.getFullText())
       let openingElement =  node.kind == ts.SyntaxKind.JsxElement ?   node.openingElement : node;
       const children =  node.kind == ts.SyntaxKind.JsxElement ? node.children : []
      
@@ -441,7 +440,6 @@ export default function extractSelectorFromJsx({ node, languageService, tsHelp, 
               // })
             }else {
   
-              logger.info()
             }
           }
         }
@@ -458,12 +456,10 @@ export default function extractSelectorFromJsx({ node, languageService, tsHelp, 
      * objectBindingPattern 
      */
     function getIdentifier(node:ts.Node){
-      logger.info(node.getFullText())
       let defNode = tsHelp.getDefinitionNode(node) as (ts.Node);
       if(!defNode){
         return
       }
-      logger.info(defNode.getFullText())
       if(ts.isVariableStatement(defNode)){
         const {  declarationList  } = defNode
         let value
@@ -768,7 +764,6 @@ export default function extractSelectorFromJsx({ node, languageService, tsHelp, 
       }
       let nodeText = node?.getText();
       let nodeKind = node?.kind && ts.SyntaxKind[node?.kind]
-      logger.info(nodeText)
       
       switch (node?.kind) {
         case ts.SyntaxKind.VariableStatement:

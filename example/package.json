@@ -6,6 +6,6 @@
     "react": "^18.2.0",
     "styled-components": "^5.3.6",
     "typescript": "^4.4.3",
-    "vscode-styled-plugin": "file:.."
+    "typescript-styled-intelligent-plugin": "file:.."
   }
 }

@@ -22,7 +22,6 @@ let c_id = 1
 
 export class CssSelectorNode{
   type: CssSelectorNodeType
-  // @de
   parent: CssSelectorNode | undefined
   parents: Set<CssSelectorNode> = new Set()
   node:CssNode.Node
