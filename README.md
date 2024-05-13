@@ -10,6 +10,7 @@ This repo has two projects:
 
 - `/` is a Typescript Plugin 
 - `/example` is a example use Typescript-styled-intelligent-plugin
+![](documentation/example.png)
 ![](documentation/preview.gif)
 
 
@@ -38,4 +39,4 @@ Then add a plugins section to your tsconfig.json or jsconfig.json
 Finally, run the Select TypeScript version command in VS Code to switch to use the workspace version of TypeScript for VS Code's JavaScript and TypeScript language support
 
 #### With VSCode 
-see  
+see  https://github.com/youxiaomi/vscode-styled-intelligent-plugin
