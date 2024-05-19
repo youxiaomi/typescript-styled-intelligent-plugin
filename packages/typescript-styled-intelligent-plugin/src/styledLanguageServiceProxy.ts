@@ -9,6 +9,7 @@ import TsHelp from './service/tsHelp';
 type LanguageServiceMethodWrapper<K extends keyof ts.LanguageService>= (delegate: ts.LanguageService[K], info?: ts.server.PluginCreateInfo) => ts.LanguageService[K];
 
 export default class StyledLanguageServiceProxy {
+  
   constructor(public typescript: typeof ts, public languageService: ts.LanguageService, public project: ts.server.Project,public info) {
     this.intercepts.getDefinitionAndBoundSpan = this.tryGetDefinitionAndBoundSpan
     this.helper = new StandardTemplateSourceHelper(
