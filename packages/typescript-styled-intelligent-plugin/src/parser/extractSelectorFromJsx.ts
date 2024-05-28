@@ -160,6 +160,7 @@ export default function extractSelectorFromJsx({ node, languageService, tsHelp, 
   let ts = typescript
   // let rootJsxElementNode: JsxElementNode|undefined
   const styledElements:JsxElementNode[] = []
+  const nodes = new Set<ts.Node>()
   function extractCssSelectorWorkWithScope(node: ts.Node | undefined, scope: ExtractCssSelectorWorkScope) {
     // scope = scope || {}
     // const { jsxElementNode, callExpressionChain } = scope
@@ -267,27 +268,38 @@ export default function extractSelectorFromJsx({ node, languageService, tsHelp, 
         isInstrinsicElement =  !isCustomJsxElement
       }
       let parentJsxElementNode = scope.getJsxElementNode();
-      if(isInstrinsicElement){
+      function addElementTagSelector(){
         let jsxElementNode =  new JsxElementNode(node, "intrinsicElement");
         jsxElementNode.addParent(parentJsxElementNode)
         parentJsxElementNode && parentJsxElementNode.addChild(jsxElementNode)
         scope.addJsxElementNodeToScope(jsxElementNode)
+        function addElementSelector(tagName:ts.JsxElement["openingElement"]["tagName"]){
+          let ele = tagName.getText();
+          let eleSelector = new JsxElementSelector(tagName,jsxElementNode,'element')
+          eleSelector.text = ele
+          eleSelector.offset = tagName.getStart()
+          jsxElementNode.addSelector(eleSelector)
+        }
         if( node.kind == ts.SyntaxKind.JsxElement){
-          function addElementSelector(tagName:ts.JsxElement["openingElement"]["tagName"]){
-            let ele = tagName.getText();
-            let eleSelector = new JsxElementSelector(tagName,jsxElementNode,'element')
-            eleSelector.text = ele
-            eleSelector.offset = tagName.getStart()
-            jsxElementNode.addSelector(eleSelector)
-          }
           addElementSelector(node.openingElement.tagName)
           parseSelector(node.openingElement.attributes,scope.getChildScope()) 
         }
+        if(node.kind == ts.SyntaxKind.JsxSelfClosingElement){
+          addElementSelector(node.tagName)
+          parseSelector(node.attributes,scope.getChildScope()) 
+        }
+      }
+      if(isInstrinsicElement){
+        addElementTagSelector()
         parseChildren(children,scope.getChildScope())
       }
       if(isCustomJsxElement){
         const attributeObjs:object = {}
+        if(node.kind == ts.SyntaxKind.JsxSelfClosingElement){
+          addElementTagSelector()
+        }
         if( node.kind == ts.SyntaxKind.JsxElement){
+          addElementTagSelector()
           node.openingElement.attributes.properties.forEach(property=>{
             if (property.kind == ts.SyntaxKind.JsxAttribute) {
               let { name, initializer  } = property
@@ -759,6 +771,12 @@ export default function extractSelectorFromJsx({ node, languageService, tsHelp, 
       }
     }
     function extractCssSelectorWork(node: ts.Node | undefined,){
+      if(node){
+        if (nodes.has(node)) {
+          return
+        }
+        nodes.add(node)
+      }
       if(Array.isArray(node)){
         return node.map(extractCssSelectorWork)
       }

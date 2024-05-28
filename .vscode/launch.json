@@ -10,6 +10,7 @@
       ],
       "name": "Launch Extension",
       "env": { "TSS_DEBUG": "9228", "TSS_REMOTE_DEBUG": "9228" },
+      // "env": { "TSS_DEBUG_BRK": "9221", "TSS_REMOTE_DEBUG": "9221" },
       "outFiles": [
         "${workspaceFolder}/packages/vscode-styled-intelligent-plugin/out/**/*.js" 
       ],
@@ -31,7 +32,7 @@
       "restart": true,
       //  "preLaunchTask": "npm: watch",
       "outFiles": [
-          "${workspaceFolder}/**/*.js",
+          "${workspaceFolder}/packages/typescript-styled-intelligent-plugin/**/*.js",
       ],
   },
   ]
