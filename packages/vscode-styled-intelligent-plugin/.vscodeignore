@@ -9,5 +9,11 @@ vsc-extension-quickstart.md
 **/*.map
 **/*.ts
 **/**.d.ts
-../../**
-../**
+# ../../**
+# ../**
+# !/out/**/*.js
+dist
+**/node_modules
+../typescript-styled-intelligent-plugin/**
+!node_modules/typescript-styled-intelligent-plugin/out/index.js
+!node_modules/typescript-styled-intelligent-plugin/package.json

@@ -1,5 +1,5 @@
 // import { JsxElementNode, JsxElementSelector,CandidateTextNode } from './extractCssSelector3'
-import * as Nodes from 'vscode-css-languageservice/lib/umd/parser/cssNodes'
+import * as Nodes from 'vscode-css-languageservice/lib/esm/parser/cssNodes'
 import { JsxElementSelector } from '../factory/nodeFactory'
 
 // type Node = JsxElementSelector|CandidateTextNode | {type:'braceOpen'|'braceClose'} | {type:'cssNode',node: Nodes.Node}

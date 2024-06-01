@@ -8,11 +8,11 @@ import TsHelp from '../service/tsHelp'
 import { findResult, flatten, omitUndefined, unique } from '../utils/utils'
 // import extractCssSelectorWorkWrap, { JsxElementNode,CandidateTextNode, JsxElementSelector } from './extractCssSelector3'
 import extractSelectorFromJsx from './extractSelectorFromJsx'
-import * as CssNode from 'vscode-css-languageservice/lib/umd/parser/cssNodes'
+import * as CssNode from 'vscode-css-languageservice/lib/esm/parser/cssNodes'
 import { extractStyleSheetSelectorWorkWrap } from './extractStyleSheet'
 import { createStyleSheetAbstractSyntaxTree, JsxElementSelector, TargetSelector } from '../factory/nodeFactory'
 import { JsxParser, ParentReferenceNode } from './jsxParser'
-import * as Nodes from 'vscode-css-languageservice/lib/umd/parser/cssNodes'
+import * as Nodes from 'vscode-css-languageservice/lib/esm/parser/cssNodes'
 import logger from '../service/logger'
 const NodeType = Nodes.NodeType
 
