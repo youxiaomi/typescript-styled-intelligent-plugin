@@ -4,16 +4,12 @@
   "license": "MIT",
   "main": "./packages/typescript-styled-intelligent-plugin/out/index.js",
   "dependencies": {
-    "fs-extra": "^10.1.0",
-    "typescript": "^4.8.0",
-    "typescript-styled-plugin": "^0.18.2",
-    "typescript-template-language-service-decorator": "^2.3.1",
-    "vscode-css-languageservice": "6.1.1"
   },
   "devDependencies": {
-   
+
   },
   "scripts": {
-    "vsce": "cd ./packages/typescript-styled-intelligent-plugin && webpack && cd ../vscode-styled-intelligent-plugin &&  vsce package  -o dist"
+    "vsce": "cd ./packages/typescript-styled-intelligent-plugin && npm run compile:prod && cd ../vscode-styled-intelligent-plugin && npm run vsce",
+    "postinstall": "cd ./packages/typescript-styled-intelligent-plugin && npm  install"
   }
 }
