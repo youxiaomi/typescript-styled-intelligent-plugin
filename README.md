@@ -8,8 +8,9 @@ typescript-styled-intelligent-plugin is an auxiliary tool that enhances the func
 
 This repo has two projects:
 
-- `/` is a Typescript Plugin 
-- `/example` is a example use Typescript-styled-intelligent-plugin
+- `packages/typescript-styled-intelligent-plugin` is a Typescript Plugin 
+  - `packages/typescript-styled-intelligent-plugin/example` is a example use Typescript-styled-intelligent-plugin
+- `packages/vscode-styled-intelligent-plugin` is a vscode Plugin (this is based on the typescript-styled-intelligent-plugin)
 ![](documentation/example.png)
 ![](documentation/preview.gif)
 

@@ -299,7 +299,6 @@ export default function extractSelectorFromJsx({ node, languageService, tsHelp, 
           addElementTagSelector()
         }
         if( node.kind == ts.SyntaxKind.JsxElement){
-          addElementTagSelector()
           node.openingElement.attributes.properties.forEach(property=>{
             if (property.kind == ts.SyntaxKind.JsxAttribute) {
               let { name, initializer  } = property
@@ -308,6 +307,25 @@ export default function extractSelectorFromJsx({ node, languageService, tsHelp, 
           })
         }
         if (identiferNodeDefine) {
+          if(ts.isVariableStatement(identiferNodeDefine)){
+            let declaration = identiferNodeDefine.declarationList.declarations[0]
+            if(declaration){
+              let { name,initializer} = declaration
+              if(initializer && ts.isTaggedTemplateExpression(initializer)){
+                let { tag } = initializer
+                if(tag && ts.isPropertyAccessExpression(tag)){
+                  if(tag.expression.getText() != 'styled'){
+                    addElementTagSelector()
+                  }
+                }
+              }else{
+                addElementTagSelector()
+              }
+            }
+          }else{
+            addElementTagSelector()
+          }
+
           // scope.addJsxElementNodeParameterToScope()
           scope.addCallExpressionToScope({
             tsNode: node,

@@ -2,7 +2,6 @@
 
 import { getCSSLanguageService, getSCSSLanguageService, TextDocument} from 'vscode-css-languageservice'
 import * as ts from 'typescript'
-import { NodeType, Node, RuleSet} from 'vscode-css-languageservice/lib/esm/parser/cssNodes'
 import * as Nodes from 'vscode-css-languageservice/lib/esm/parser/cssNodes'
 import { findResult, flatten, omitUndefined } from '../utils/utils'
 import { CssTextDocument, getScssService } from '../service/cssService'

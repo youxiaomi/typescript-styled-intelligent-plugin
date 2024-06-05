@@ -8,8 +8,8 @@ typescript-styled-intelligent-plugin是一个辅助工具，通过提供智能�
 项目结构
 这个仓库有两个项目：
 
-- 是一个TypeScript插件
-- example是一个使用Typescript-styled-intelligent-plugin的示例
+- `packages/typescript-styled-intelligent-plugin` 是一个Typescript Plugin   
+- `packages/vscode-styled-intelligent-plugin` 这是一个vscode插件 (是基于typescript-styled-intelligent-plugin实现)
 
 ![](documentation/example.png)
 ![](documentation/preview.gif)
@@ -46,4 +46,4 @@ npm install --save-dev git+https://github.com/youxiaomi/typescript-styled-intell
 最后，在VS Code中运行选择TypeScript版本命令，以切换使用VS Code的TypeScript版本进行JavaScript和TypeScript语言支持
 
 #### TODO
-css选择自动不全
+css选择器自动不全

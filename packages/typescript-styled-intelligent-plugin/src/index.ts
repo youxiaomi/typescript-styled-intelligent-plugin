@@ -1,5 +1,4 @@
 import { getSCSSLanguageService ,TextDocument} from 'vscode-css-languageservice'
-import { Node,NodeType } from 'vscode-css-languageservice/lib/esm/parser/cssNodes'
 
 
 import * as ts from 'typescript/lib/tsserverlibrary';

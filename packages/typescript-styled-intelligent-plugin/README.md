@@ -6,7 +6,6 @@
 typescript-styled-intelligent-plugin is an auxiliary tool that enhances the functionality of styled-components by providing intelligent navigation support.
 
 
-This repo has two projects:
 
 - `/` is a Typescript Plugin 
 - `/example` is a example use Typescript-styled-intelligent-plugin
