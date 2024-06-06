@@ -9,8 +9,8 @@ typescript-styled-intelligent-plugin is an auxiliary tool that enhances the func
 
 - `/` is a Typescript Plugin 
 - `/example` is a example use Typescript-styled-intelligent-plugin
-![](documentation/example.png)
-![](documentation/preview.gif)
+![](https://raw.githubusercontent.com/youxiaomi/typescript-styled-intelligent-plugin/main/documentation/example.png)
+![](https://raw.githubusercontent.com/youxiaomi/typescript-styled-intelligent-plugin/main/documentation/preview.gif)
 
 
 ### Usage

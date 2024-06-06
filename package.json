@@ -8,6 +8,15 @@
   "devDependencies": {
 
   },
+  "keywords": [
+    "TypeScript",
+    "styled",
+    "styled-components",
+    "styled components",
+    "css",
+    "scss",
+    "react"
+  ],
   "scripts": {
     "vsce": "cd ./packages/typescript-styled-intelligent-plugin && npm run compile:prod && cd ../vscode-styled-intelligent-plugin && npm run vsce",
     "postinstall": "cd ./packages/typescript-styled-intelligent-plugin && npm  install"

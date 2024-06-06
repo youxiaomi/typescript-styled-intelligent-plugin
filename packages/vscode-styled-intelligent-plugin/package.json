@@ -5,12 +5,21 @@
   "publisher":"youxiaomi",
   "icon": "documentation/icon.png",
   "version": "0.0.3",
-  "repository": "https://github.com/youxiaomi/vscode-styled-intelligent-plugin",
+  "repository": "https://github.com/youxiaomi/typescript-styled-intelligent-plugin",
   "engines": {
     "vscode": "^1.69.0"
   },
   "categories": [
     "Other"
+  ],
+  "keywords": [
+    "TypeScript",
+    "styled",
+    "styled-components",
+    "styled components",
+    "css",
+    "scss",
+    "react"
   ],
   "activationEvents": [
     "onLanguage:typescript",

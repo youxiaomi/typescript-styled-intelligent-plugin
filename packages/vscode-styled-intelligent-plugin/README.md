@@ -7,8 +7,8 @@ the plugin implemented based on [typescript-styled-intelligent-plugin](https://g
 
 ### Usage  
 
-![](documentation/example.png)
-![](documentation/preview.gif)
+![](https://raw.githubusercontent.com/youxiaomi/typescript-styled-intelligent-plugin/main/documentation/example.png)
+![](https://raw.githubusercontent.com/youxiaomi/typescript-styled-intelligent-plugin/main/documentation/preview.gif)
 
 #### With VS Code
 

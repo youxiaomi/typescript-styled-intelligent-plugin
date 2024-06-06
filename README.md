@@ -11,8 +11,8 @@ This repo has two projects:
 - `packages/typescript-styled-intelligent-plugin` is a Typescript Plugin 
   - `packages/typescript-styled-intelligent-plugin/example` is a example use Typescript-styled-intelligent-plugin
 - `packages/vscode-styled-intelligent-plugin` is a vscode Plugin (this is based on the typescript-styled-intelligent-plugin)
-![](documentation/example.png)
-![](documentation/preview.gif)
+![](https://raw.githubusercontent.com/youxiaomi/typescript-styled-intelligent-plugin/main/documentation/example.png)
+![](https://raw.githubusercontent.com/youxiaomi/typescript-styled-intelligent-plugin/main/documentation/preview.gif)
 
 
 ### Usage

@@ -21,7 +21,8 @@ typescript-styled-intelligent-plugin是一个辅助工具，通过提供智能�
 ### 使用方法
 ####  使用VSCode（推荐）
 从release页面下载最新的vsix文件。在VScode中按下F1，输入‘vsix’，然后在VScode中选择‘install from vsix’。
-开始享受！
+可以使用了！
+
 查看packages/vscode-styled-intelligent-plugin
 
 #### 使用TypeScript
