@@ -1,7 +1,7 @@
 
 
 import typescript from 'typescript/lib/tsserverlibrary'
-import * as CssNode from 'vscode-css-languageservice/lib/esm/parser/cssNodes'
+import * as CssNode from 'vscode-css-languageservice/lib/umd/parser/cssNodes'
 import { omitUndefined } from '../utils/utils'
 const { NodeType}  = CssNode
 

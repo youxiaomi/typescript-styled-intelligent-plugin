@@ -4,7 +4,7 @@
   "description": "",
   "publisher":"youxiaomi",
   "icon": "documentation/icon.png",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "repository": "https://github.com/youxiaomi/vscode-styled-intelligent-plugin",
   "engines": {
     "vscode": "^1.69.0"

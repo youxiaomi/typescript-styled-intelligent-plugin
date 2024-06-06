@@ -29,6 +29,7 @@ const config = {
     // mainFields: ['browser', 'module', 'main'], // look for `browser` entry point in imported node modules
     extensions: ['.ts', '.js'],
     alias: {
+      'vscode-css-languageservice/lib/umd/parser/cssNodes': path.resolve(__dirname, 'node_modules/vscode-css-languageservice/lib/esm/parser/cssNodes'),
       // provides alternate implementation for node module and source files
     },
     fallback: {

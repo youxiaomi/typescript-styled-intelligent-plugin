@@ -1,5 +1,5 @@
-require("vscode-css-languageservice/lib/esm/parser/cssNodes")
-declare module "vscode-css-languageservice/lib/esm/parser/cssNodes" {
+require("vscode-css-languageservice/lib/umd/parser/cssNodes")
+declare module "vscode-css-languageservice/lib/umd/parser/cssNodes" {
     export declare enum NodeType {
         Undefined = 0,
         Identifier = 1,

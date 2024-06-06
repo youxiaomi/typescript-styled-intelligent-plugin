@@ -24,8 +24,8 @@
   },
   "scripts": {
     "compile": "tsc -p ./",
-    "watch:ts": "tsc -watch -p ./",
-    "watch": "webpack -w",
+    "watch": "tsc -watch -p ./",
+    "watch:wepack": "webpack -w",
     "test": "mocha out/test/suggestion --trace-warnings",
     "compile:prod": "webpack --mode production --config webpack.config.js",
     "postinstall": "npm run compile:prod"

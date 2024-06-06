@@ -2,8 +2,8 @@
 
 import { getSCSSLanguageService ,TextDocument,} from 'vscode-css-languageservice'
 import * as ts from 'typescript/lib/tsserverlibrary'
-import { NodeType,Node,RuleSet}  from 'vscode-css-languageservice/lib/esm/parser/cssNodes'
-import * as Nodes from 'vscode-css-languageservice/lib/esm/parser/cssNodes'
+import { NodeType,Node,RuleSet}  from 'vscode-css-languageservice/lib/umd/parser/cssNodes'
+import * as Nodes from 'vscode-css-languageservice/lib/umd/parser/cssNodes'
 import { flatten, omitUndefined } from '../utils/utils'
 // import { JsxElementNode, JsxElementSelector,JsxElementNode, StyledElement } from '../parser/extractCssSelector'
 // import {} from

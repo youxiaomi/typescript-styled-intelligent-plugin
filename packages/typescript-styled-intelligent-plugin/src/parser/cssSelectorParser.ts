@@ -11,7 +11,7 @@ import extractSelectorFromJsx from './extractSelectorFromJsx'
 import { extractStyleSheetSelectorWorkWrap } from './extractStyleSheet'
 import { createStyleSheetAbstractSyntaxTree, JsxElementSelector, TargetSelector } from '../factory/nodeFactory'
 import { JsxParser, ParentReferenceNode } from './jsxParser'
-import * as Nodes from 'vscode-css-languageservice/lib/esm/parser/cssNodes'
+import * as Nodes from 'vscode-css-languageservice/lib/umd/parser/cssNodes'
 import logger from '../service/logger'
 const NodeType = Nodes.NodeType
 
