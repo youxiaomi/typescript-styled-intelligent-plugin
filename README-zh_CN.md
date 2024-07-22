@@ -11,9 +11,9 @@ typescript-styled-intelligent-plugin是一个辅助工具，通过提供智能�
 - `packages/typescript-styled-intelligent-plugin` 是一个Typescript Plugin   
 - `packages/vscode-styled-intelligent-plugin` 这是一个vscode插件 (是基于typescript-styled-intelligent-plugin实现)
 
-![](documentation/example.png)
-![](documentation/preview.gif)
+![](https://raw.githubusercontent.com/youxiaomi/typescript-styled-intelligent-plugin/main/documentation/example.png)   
 
+![](https://raw.githubusercontent.com/youxiaomi/typescript-styled-intelligent-plugin/main/documentation/preview.gif)
 
 
 
@@ -45,6 +45,7 @@ npm install --save-dev git+https://github.com/youxiaomi/typescript-styled-intell
 }
 ```
 最后，在VS Code中运行选择TypeScript版本命令，以切换使用VS Code的TypeScript版本进行JavaScript和TypeScript语言支持
-
+#### 本地开发
+packages/vscode-styled-intelligent-plugin/tsconfig.json plugins修改为注释路径
 #### TODO
 css选择器自动不全

@@ -301,11 +301,35 @@ export default class TsHelp {
   }
   getTag = (node: ts.Node)=>{
     let ts = this.typescript
+    let tags = ['styled']
     switch(node.kind){
       case ts.SyntaxKind.TaggedTemplateExpression: 
-        return getTagName(node as ts.TaggedTemplateExpression,['styled'])
+        let { tag } = node as ts.TaggedTemplateExpression
+        if(this.typescript.isCallExpression(tag)){
+          let { expression,arguments:args } = tag
+          let expressionText = expression.getText()
+          if(tags.includes(expressionText)){
+            let reference = this.getDefinitionNode(args[0]);
+            if(reference && this.typescript.isVariableStatement(reference)){
+              let { declarationList } = reference
+              let { declarations } = declarationList
+              if(declarations.length>0){
+                let { initializer } = declarations[0]
+                return initializer &&  this.getTag(initializer)
+              }
+            }
+          }
+        }
+        return getTagName(node as ts.TaggedTemplateExpression,tags)
       case ts.SyntaxKind.NoSubstitutionTemplateLiteral:
-        return getTaggedLiteralName(this.typescript, node as ts.NoSubstitutionTemplateLiteral,['styled'])
+        let tagName = getTaggedLiteralName(this.typescript, node as ts.NoSubstitutionTemplateLiteral,tags)
+        if(tagName){
+          return tagName
+        }
+        if(this.typescript.isTaggedTemplateExpression(node.parent)){
+          return  this.getTag(node.parent)
+        }
+        return 
       case ts.SyntaxKind.TemplateHead:
         if(node.parent && node.parent.parent){
           return this.getTag(node.parent.parent)

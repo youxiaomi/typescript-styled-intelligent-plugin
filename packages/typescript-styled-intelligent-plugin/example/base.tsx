@@ -59,3 +59,19 @@ class IndexClass extends React.Component{
     </IndexView>
   }
 }
+
+
+const TestView = styled.div`
+`
+
+const TestExtendStyledView = styled(TestView)`
+  &.index-view{
+
+  }
+`
+
+function TestExtendStyled(){
+  return <TestExtendStyledView className='index-view'>
+    {/* <div className='aa'></div> */}
+  </TestExtendStyledView>
+}
